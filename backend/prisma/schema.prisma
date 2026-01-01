@@ -1,0 +1,151 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  books     Book[]
+  staff     Staff?
+}
+
+model Staff {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   // ADMIN, STAFF, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Book {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loans     Loan[]
+  people    Person[]
+  deposits  Deposit[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Person {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  address   String?
+  accountNo String?
+  bookId    String
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  loans     Loan[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([bookId])
+  @@index([phone])
+}
+
+model Loan {
+  id                String       @id @default(cuid())
+  billNumber        String
+  personId          String
+  person            Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+  bookId            String
+  book              Book         @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  accountType       String       // LENT or BORROWED
+  loanType          String       // WITH_INTEREST or FIXED_AMOUNT
+  interestCalc      String       // MONTHLY or DAILY
+  principalAmount   Float
+  interestRate      Float
+  interestEvery     String       // DAILY, WEEKLY, MONTHLY
+  startDate         DateTime
+  endDate           DateTime?
+  hasEMI            Boolean      @default(false)
+  numberOfEMI        Int?
+  hasCompounding    Boolean      @default(false)
+  dateToDateCalc    Boolean      @default(false)
+  status            String       @default("ACTIVE") // ACTIVE, SETTLED, DELETED, MUTED
+  strategy          String       // FIXED_AMOUNT, SIMPLE_INTEREST, COMPOUND_INTEREST, WITH_EMI
+  remarks           String?
+  transactions      Transaction[]
+  collaterals       Collateral[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([personId])
+  @@index([bookId])
+  @@index([status])
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  loanId      String
+  loan        Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  amount      Float
+  type        String   // PAYMENT, TOPUP, etc.
+  paymentMode String   // CASH, BANK, UPI, etc.
+  date        DateTime
+  remarks     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([loanId])
+  @@index([date])
+}
+
+model Collateral {
+  id          String   @id @default(cuid())
+  loanId      String
+  loan        Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  productName String
+  productType String   // GOLD, CASH_LOAN, etc.
+  purity      String?
+  weight      Float?
+  weightUnit  String?  // KG, GRAM, MILI
+  value       Float    @default(0)
+  remarks     String?
+  images      String?  // JSON string of image URLs array
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([loanId])
+}
+
+model Deposit {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String
+  amount      Float
+  frequency   String   // DAILY, WEEKLY, MONTHLY
+  startDate   DateTime
+  bookId      String
+  book        Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([bookId])
+}
+
+model OTP {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+  @@index([expiresAt])
+}

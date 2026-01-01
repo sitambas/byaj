@@ -1,0 +1,396 @@
+import { Request, Response } from 'express';
+import prisma from '../config/database';
+import { AuthRequest } from '../middleware/auth';
+import { InterestCalculator } from '../services/interestCalculator';
+
+export const getAllLoans = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    const { bookId, status, strategy, search, accountType } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const where: any = {
+      book: { userId },
+    };
+
+    if (bookId) {
+      where.bookId = bookId as string;
+    }
+
+    if (status) {
+      where.status = status;
+    } else {
+      where.status = { not: 'DELETED' };
+    }
+
+    if (strategy) {
+      where.strategy = strategy;
+    }
+
+    if (accountType) {
+      where.accountType = accountType;
+    }
+
+    if (search) {
+      where.OR = [
+        { billNumber: { contains: search as string, mode: 'insensitive' } },
+        {
+          person: {
+            OR: [
+              { name: { contains: search as string, mode: 'insensitive' } },
+              { phone: { contains: search as string, mode: 'insensitive' } },
+            ],
+          },
+        },
+      ];
+    }
+
+    const loans = await prisma.loan.findMany({
+      where,
+      include: {
+        person: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+        transactions: {
+          where: { type: 'PAYMENT' },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Calculate totals for each loan
+    const loansWithTotals = loans.map((loan) => {
+      const recovered = loan.transactions.reduce((sum, t) => sum + t.amount, 0);
+      const interest = InterestCalculator.calculateInterest(
+        loan.principalAmount,
+        loan.interestRate,
+        loan.startDate,
+        loan.endDate,
+        loan.loanType as 'WITH_INTEREST' | 'FIXED_AMOUNT',
+        loan.interestCalc as 'MONTHLY' | 'DAILY',
+        loan.interestEvery as 'DAILY' | 'WEEKLY' | 'MONTHLY',
+        loan.hasCompounding
+      );
+      const total = loan.principalAmount + interest;
+      const outstanding = total - recovered;
+
+      return {
+        id: loan.id,
+        billNumber: loan.billNumber,
+        person: loan.person,
+        principalAmount: loan.principalAmount,
+        interest,
+        total,
+        outstanding,
+        startDate: loan.startDate,
+        endDate: loan.endDate,
+        status: loan.status,
+        strategy: loan.strategy,
+        accountType: loan.accountType,
+      };
+    });
+
+    res.json({ loans: loansWithTotals });
+  } catch (error: any) {
+    console.error('Get loans error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+};
+
+export const getLoanById = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    const { id } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const loan = await prisma.loan.findFirst({
+      where: {
+        id,
+        book: { userId },
+      },
+      include: {
+        person: true,
+        transactions: {
+          orderBy: { date: 'desc' },
+        },
+        collaterals: true,
+      },
+    });
+
+    if (!loan) {
+      return res.status(404).json({ error: 'Loan not found' });
+    }
+
+    // Calculate totals
+    const recovered = loan.transactions
+      .filter((t) => t.type === 'PAYMENT')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const topup = loan.transactions
+      .filter((t) => t.type === 'TOPUP')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const interest = InterestCalculator.calculateInterest(
+      loan.principalAmount,
+      loan.interestRate,
+      loan.startDate,
+      loan.endDate,
+      loan.loanType as 'WITH_INTEREST' | 'FIXED_AMOUNT',
+      loan.interestCalc as 'MONTHLY' | 'DAILY',
+      loan.interestEvery as 'DAILY' | 'WEEKLY' | 'MONTHLY',
+      loan.hasCompounding
+    );
+
+    const total = loan.principalAmount + topup + interest;
+    const amountLeft = total - recovered;
+
+    // Calculate time duration
+    const endDate = loan.endDate || new Date();
+    const days = Math.ceil(
+      (endDate.getTime() - loan.startDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const years = Math.floor(days / 365);
+    const months = Math.floor((days % 365) / 30);
+    const remainingDays = days % 30;
+
+    res.json({
+      loan: {
+        ...loan,
+        calculated: {
+          interest,
+          total,
+          topup,
+          amountRecovered: recovered,
+          amountLeft,
+          timeDuration: {
+            years,
+            months,
+            days: remainingDays,
+          },
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error('Get loan error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+};
+
+export const createLoan = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    const {
+      personId,
+      bookId,
+      accountType,
+      loanType,
+      interestCalc,
+      principalAmount,
+      interestRate,
+      interestEvery,
+      startDate,
+      endDate,
+      hasEMI,
+      numberOfEMI,
+      hasCompounding,
+      dateToDateCalc,
+      strategy,
+      remarks,
+      billNumber,
+    } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Validate required fields
+    if (!personId || !bookId || !principalAmount || !startDate) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Verify book belongs to user
+    const book = await prisma.book.findFirst({
+      where: { id: bookId, userId },
+    });
+
+    if (!book) {
+      return res.status(404).json({ error: 'Book not found' });
+    }
+
+    // Verify person belongs to book
+    const person = await prisma.person.findFirst({
+      where: { id: personId, bookId },
+    });
+
+    if (!person) {
+      return res.status(404).json({ error: 'Person not found' });
+    }
+
+    // Generate bill number if not provided
+    let finalBillNumber = billNumber;
+    if (!finalBillNumber) {
+      const count = await prisma.loan.count({
+        where: { bookId },
+      });
+      finalBillNumber = `${310000 + count + 1}`;
+    }
+
+    const loan = await prisma.loan.create({
+      data: {
+        billNumber: finalBillNumber,
+        personId,
+        bookId,
+        accountType: accountType || 'LENT',
+        loanType: loanType || 'WITH_INTEREST',
+        interestCalc: interestCalc || 'MONTHLY',
+        principalAmount: parseFloat(principalAmount),
+        interestRate: parseFloat(interestRate) || 0,
+        interestEvery: interestEvery || 'MONTHLY',
+        startDate: new Date(startDate),
+        endDate: endDate ? new Date(endDate) : null,
+        hasEMI: hasEMI || false,
+        numberOfEMI: numberOfEMI || null,
+        hasCompounding: hasCompounding || false,
+        dateToDateCalc: dateToDateCalc || false,
+        strategy: strategy || 'SIMPLE_INTEREST',
+        remarks: remarks || null,
+        status: 'ACTIVE',
+      },
+    });
+
+    res.status(201).json({ loan });
+  } catch (error: any) {
+    console.error('Create loan error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+};
+
+export const updateLoan = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    const { id } = req.params;
+    const updateData = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Verify loan belongs to user
+    const existingLoan = await prisma.loan.findFirst({
+      where: {
+        id,
+        book: { userId },
+      },
+    });
+
+    if (!existingLoan) {
+      return res.status(404).json({ error: 'Loan not found' });
+    }
+
+    // Prepare update data
+    const data: any = {};
+    if (updateData.remarks !== undefined) data.remarks = updateData.remarks;
+    if (updateData.billNumber !== undefined) data.billNumber = updateData.billNumber;
+    if (updateData.endDate !== undefined) data.endDate = updateData.endDate ? new Date(updateData.endDate) : null;
+    if (updateData.status !== undefined) data.status = updateData.status;
+
+    const loan = await prisma.loan.update({
+      where: { id },
+      data,
+    });
+
+    res.json({ loan });
+  } catch (error: any) {
+    console.error('Update loan error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+};
+
+export const deleteLoan = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    const { id } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Verify loan belongs to user
+    const existingLoan = await prisma.loan.findFirst({
+      where: {
+        id,
+        book: { userId },
+      },
+    });
+
+    if (!existingLoan) {
+      return res.status(404).json({ error: 'Loan not found' });
+    }
+
+    // Soft delete - set status to DELETED
+    await prisma.loan.update({
+      where: { id },
+      data: { status: 'DELETED' },
+    });
+
+    res.json({ message: 'Loan deleted successfully' });
+  } catch (error: any) {
+    console.error('Delete loan error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+};
+
+export const recordPayment = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    const { id } = req.params;
+    const { amount, paymentMode, date, remarks } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!amount || !paymentMode) {
+      return res.status(400).json({ error: 'Amount and payment mode are required' });
+    }
+
+    // Verify loan belongs to user
+    const loan = await prisma.loan.findFirst({
+      where: {
+        id,
+        book: { userId },
+      },
+    });
+
+    if (!loan) {
+      return res.status(404).json({ error: 'Loan not found' });
+    }
+
+    const transaction = await prisma.transaction.create({
+      data: {
+        loanId: id,
+        amount: parseFloat(amount),
+        type: 'PAYMENT',
+        paymentMode,
+        date: date ? new Date(date) : new Date(),
+        remarks: remarks || null,
+      },
+    });
+
+    res.status(201).json({ transaction });
+  } catch (error: any) {
+    console.error('Record payment error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+};
+
