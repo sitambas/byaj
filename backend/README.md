@@ -2,7 +2,30 @@
 
 Node.js + Express backend for ByajBook Loan Management System.
 
-## Setup
+## Quick Start (Recommended)
+
+**Use the automated startup script:**
+
+```bash
+# macOS/Linux
+./start.sh
+
+# Windows
+start.bat
+
+# Or from project root
+./start-backend.sh  # macOS/Linux
+start-backend.bat   # Windows
+```
+
+The script will automatically:
+- ✅ Create `.env` file if it doesn't exist
+- ✅ Install dependencies if needed
+- ✅ Generate Prisma client
+- ✅ Initialize database if needed
+- ✅ Start the development server
+
+## Manual Setup
 
 1. Install dependencies:
 ```bash
@@ -11,23 +34,22 @@ npm install
 
 2. Setup environment variables:
 ```bash
-cp .env.example .env
+# Create .env file with:
+DATABASE_URL="file:./prisma/dev.db"
+JWT_SECRET="your-secret-key-change-in-production"
+JWT_EXPIRES_IN="7d"
+PORT=4000
+NODE_ENV=development
+FRONTEND_URL="http://localhost:3000"
 ```
 
-3. Update `.env` with your database URL:
-```
-DATABASE_URL="postgresql://user:password@localhost:5432/byajbook?schema=public"
-JWT_SECRET="your-secret-key"
-PORT=3001
-```
-
-4. Run database migrations:
+3. Run database migrations:
 ```bash
 npx prisma migrate dev
 npx prisma generate
 ```
 
-5. Start development server:
+4. Start development server:
 ```bash
 npm run dev
 ```
@@ -55,7 +77,7 @@ backend/
 - `GET /health` - Server health check
 - `GET /api` - API information
 
-### Authentication (to be implemented)
+### Authentication
 - `POST /api/auth/login` - Login with phone number
 - `POST /api/auth/verify` - Verify OTP
 - `GET /api/auth/me` - Get current user
@@ -83,7 +105,7 @@ backend/
 
 ## Database
 
-Using Prisma ORM with PostgreSQL.
+Using Prisma ORM with SQLite (development) or PostgreSQL (production).
 
 ### Useful Commands
 

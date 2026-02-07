@@ -81,7 +81,7 @@ export default function DashboardPage() {
                     {loading ? '...' : formatCurrency(summary.totalOutstanding)}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
                   💰
                 </div>
               </div>
@@ -95,7 +95,7 @@ export default function DashboardPage() {
                     {loading ? '...' : formatCurrency(summary.totalLent)}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
                   💵
                 </div>
               </div>
@@ -109,7 +109,7 @@ export default function DashboardPage() {
                     {loading ? '...' : formatCurrency(summary.totalBorrowed)}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
                   📄
                 </div>
               </div>
@@ -123,7 +123,7 @@ export default function DashboardPage() {
                     {loading ? '...' : formatCurrency(summary.peopleOwe)}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
                   👥
                 </div>
               </div>
@@ -137,7 +137,7 @@ export default function DashboardPage() {
                     {loading ? '...' : formatCurrency(summary.youOwe)}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
                   ⚠️
                 </div>
               </div>
@@ -154,7 +154,7 @@ export default function DashboardPage() {
             ) : (
               <div className="h-64 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-purple-600 mb-2">
+                  <div className="text-3xl font-bold text-indigo-600 mb-2">
                     {formatCurrency(chartData.totalLent)}
                   </div>
                   <div className="text-xl text-orange-600 mb-4">
@@ -162,7 +162,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-center justify-center space-x-4">
                     <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 bg-purple-600 rounded"></div>
+                      <div className="w-4 h-4 bg-indigo-600 rounded"></div>
                       <span className="text-sm text-gray-600">Total Lent</span>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -179,12 +179,12 @@ export default function DashboardPage() {
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Today's Due Loans</h2>
-              <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+              <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
                 + Add Loan
               </button>
             </div>
             <div className="flex space-x-2 mb-4">
-              <button className="px-4 py-2 bg-purple-600 text-white rounded-lg">All</button>
+              <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg">All</button>
               <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Due Today</button>
               <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Overdue</button>
               <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Collaterals</button>

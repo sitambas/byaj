@@ -22,7 +22,7 @@ export default function Header() {
             <input
               type="text"
               placeholder="Start typing to search..."
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 w-64"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64"
             />
             <svg
               className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
@@ -39,7 +39,7 @@ export default function Header() {
               <p className="text-sm font-medium text-gray-900">Hi, {user?.name || 'User'}</p>
               <p className="text-xs text-gray-500">XXXXXX1693</p>
             </div>
-            <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+            <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
               {user?.name?.charAt(0).toUpperCase() || 'U'}
             </div>
           </div>

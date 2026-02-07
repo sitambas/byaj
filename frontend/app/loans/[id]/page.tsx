@@ -114,7 +114,7 @@ export default function LoanDetailsPage() {
             <div className="mb-6">
               <button
                 onClick={() => router.back()}
-                className="text-purple-600 hover:text-purple-700 mb-4"
+                className="text-indigo-600 hover:text-indigo-700 mb-4"
               >
                 ← Back
               </button>
@@ -126,8 +126,8 @@ export default function LoanDetailsPage() {
               <div className="lg:col-span-1 space-y-6">
                 <div className="bg-white p-6 rounded-lg shadow">
                   <div className="flex items-center space-x-4 mb-4">
-                    <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                      <span className="text-2xl font-semibold text-purple-600">
+                    <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
+                      <span className="text-2xl font-semibold text-indigo-600">
                         {loan.person?.name?.charAt(0).toUpperCase() || 'U'}
                       </span>
                     </div>
@@ -184,7 +184,7 @@ export default function LoanDetailsPage() {
                 <div className="bg-white p-6 rounded-lg shadow">
                   <h3 className="text-lg font-semibold mb-4">Loan Summary</h3>
                   <div className="text-center mb-6">
-                    <div className="text-3xl font-bold text-purple-600 mb-2">
+                    <div className="text-3xl font-bold text-indigo-600 mb-2">
                       {formatCurrency(loan.principalAmount)}
                     </div>
                     <div className="text-xl text-orange-600 mb-4">
@@ -192,7 +192,7 @@ export default function LoanDetailsPage() {
                     </div>
                     <div className="flex items-center justify-center space-x-4">
                       <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 bg-purple-600 rounded"></div>
+                        <div className="w-4 h-4 bg-indigo-600 rounded"></div>
                         <span className="text-sm text-gray-600">You lent</span>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -232,7 +232,7 @@ export default function LoanDetailsPage() {
                 <div className="bg-white p-6 rounded-lg shadow">
                   <div className="flex justify-between mb-4">
                     <h3 className="text-lg font-semibold">Financial Summary</h3>
-                    <button className="text-purple-600 hover:text-purple-700 text-sm">
+                    <button className="text-indigo-600 hover:text-indigo-700 text-sm">
                       Edit
                     </button>
                   </div>
@@ -280,7 +280,7 @@ export default function LoanDetailsPage() {
                     <button className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
                       Add Topup
                     </button>
-                    <button className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm">
+                    <button className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm">
                       Transactions
                     </button>
                   </div>
@@ -314,7 +314,7 @@ export default function LoanDetailsPage() {
             <div className="fixed bottom-8 right-8">
               <button
                 onClick={() => setShowPaymentModal(true)}
-                className="bg-purple-600 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-purple-700"
+                className="bg-indigo-600 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-indigo-700"
               >
                 Record Payment ↓
               </button>
@@ -348,7 +348,7 @@ export default function LoanDetailsPage() {
                         required
                         min="0"
                         step="0.01"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     </div>
 
@@ -360,7 +360,7 @@ export default function LoanDetailsPage() {
                         value={paymentData.paymentMode}
                         onChange={(e) => setPaymentData({ ...paymentData, paymentMode: e.target.value })}
                         required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       >
                         <option value="CASH">Cash</option>
                         <option value="BANK">Bank</option>
@@ -378,7 +378,7 @@ export default function LoanDetailsPage() {
                         value={paymentData.date}
                         onChange={(e) => setPaymentData({ ...paymentData, date: e.target.value })}
                         required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     </div>
 
@@ -390,7 +390,7 @@ export default function LoanDetailsPage() {
                         value={paymentData.remarks}
                         onChange={(e) => setPaymentData({ ...paymentData, remarks: e.target.value })}
                         rows={3}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     </div>
 
@@ -404,7 +404,7 @@ export default function LoanDetailsPage() {
                       </button>
                       <button
                         type="submit"
-                        className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                        className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
                       >
                         Record Payment
                       </button>

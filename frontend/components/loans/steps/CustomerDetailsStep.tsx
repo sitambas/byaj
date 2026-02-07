@@ -42,7 +42,7 @@ export default function CustomerDetailsStep({ formData, setFormData, selectedBoo
             onClick={() => setShowNewPerson(false)}
             className={`px-4 py-2 rounded-lg ${
               !showNewPerson
-                ? 'bg-purple-600 text-white'
+                ? 'bg-indigo-600 text-white'
                 : 'bg-gray-200 text-gray-700'
             }`}
           >
@@ -53,7 +53,7 @@ export default function CustomerDetailsStep({ formData, setFormData, selectedBoo
             onClick={() => setShowNewPerson(true)}
             className={`px-4 py-2 rounded-lg ${
               showNewPerson
-                ? 'bg-purple-600 text-white'
+                ? 'bg-indigo-600 text-white'
                 : 'bg-gray-200 text-gray-700'
             }`}
           >
@@ -80,7 +80,7 @@ export default function CustomerDetailsStep({ formData, setFormData, selectedBoo
               });
             }}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="">Select Customer</option>
             {people.map((person) => (
@@ -101,7 +101,7 @@ export default function CustomerDetailsStep({ formData, setFormData, selectedBoo
               value={formData.personName}
               onChange={(e) => setFormData({ ...formData, personName: e.target.value })}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
@@ -118,7 +118,7 @@ export default function CustomerDetailsStep({ formData, setFormData, selectedBoo
                 value={formData.personPhone}
                 onChange={(e) => setFormData({ ...formData, personPhone: e.target.value })}
                 required
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
           </div>
@@ -131,7 +131,7 @@ export default function CustomerDetailsStep({ formData, setFormData, selectedBoo
               value={formData.personAddress}
               onChange={(e) => setFormData({ ...formData, personAddress: e.target.value })}
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
         </>

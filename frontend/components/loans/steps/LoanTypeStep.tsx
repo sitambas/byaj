@@ -19,14 +19,14 @@ export default function LoanTypeStep({ formData, setFormData }: Props) {
               onClick={() => setFormData({ ...formData, loanType: 'WITH_INTEREST' })}
               className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
                 formData.loanType === 'WITH_INTEREST'
-                  ? 'border-purple-600 bg-purple-50'
-                  : 'border-gray-300 hover:border-purple-300'
+                  ? 'border-indigo-600 bg-indigo-50'
+                  : 'border-gray-300 hover:border-indigo-300'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-semibold">With Interest</span>
                 {formData.loanType === 'WITH_INTEREST' && (
-                  <span className="text-purple-600">✓</span>
+                  <span className="text-indigo-600">✓</span>
                 )}
               </div>
               <p className="text-sm text-gray-600">
@@ -38,14 +38,14 @@ export default function LoanTypeStep({ formData, setFormData }: Props) {
               onClick={() => setFormData({ ...formData, loanType: 'FIXED_AMOUNT' })}
               className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
                 formData.loanType === 'FIXED_AMOUNT'
-                  ? 'border-purple-600 bg-purple-50'
-                  : 'border-gray-300 hover:border-purple-300'
+                  ? 'border-indigo-600 bg-indigo-50'
+                  : 'border-gray-300 hover:border-indigo-300'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-semibold">Fixed Amount</span>
                 {formData.loanType === 'FIXED_AMOUNT' && (
-                  <span className="text-purple-600">✓</span>
+                  <span className="text-indigo-600">✓</span>
                 )}
               </div>
               <p className="text-sm text-gray-600">
@@ -64,14 +64,14 @@ export default function LoanTypeStep({ formData, setFormData }: Props) {
                 onClick={() => setFormData({ ...formData, interestCalc: 'MONTHLY' })}
                 className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
                   formData.interestCalc === 'MONTHLY'
-                    ? 'border-purple-600 bg-purple-50'
-                    : 'border-gray-300 hover:border-purple-300'
+                    ? 'border-indigo-600 bg-indigo-50'
+                    : 'border-gray-300 hover:border-indigo-300'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold">Monthly</span>
                   {formData.interestCalc === 'MONTHLY' && (
-                    <span className="text-purple-600">✓</span>
+                    <span className="text-indigo-600">✓</span>
                   )}
                 </div>
                 <p className="text-sm text-gray-600">
@@ -84,14 +84,14 @@ export default function LoanTypeStep({ formData, setFormData }: Props) {
                 onClick={() => setFormData({ ...formData, interestCalc: 'DAILY' })}
                 className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
                   formData.interestCalc === 'DAILY'
-                    ? 'border-purple-600 bg-purple-50'
-                    : 'border-gray-300 hover:border-purple-300'
+                    ? 'border-indigo-600 bg-indigo-50'
+                    : 'border-gray-300 hover:border-indigo-300'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold">Daily</span>
                   {formData.interestCalc === 'DAILY' && (
-                    <span className="text-purple-600">✓</span>
+                    <span className="text-indigo-600">✓</span>
                   )}
                 </div>
                 <p className="text-sm text-gray-600">
@@ -112,7 +112,7 @@ export default function LoanTypeStep({ formData, setFormData }: Props) {
             onClick={() => setFormData({ ...formData, accountType: 'LENT' })}
             className={`px-6 py-3 rounded-lg ${
               formData.accountType === 'LENT'
-                ? 'bg-purple-600 text-white'
+                ? 'bg-indigo-600 text-white'
                 : 'bg-gray-200 text-gray-700'
             }`}
           >
@@ -122,7 +122,7 @@ export default function LoanTypeStep({ formData, setFormData }: Props) {
             onClick={() => setFormData({ ...formData, accountType: 'BORROWED' })}
             className={`px-6 py-3 rounded-lg ${
               formData.accountType === 'BORROWED'
-                ? 'bg-purple-600 text-white'
+                ? 'bg-indigo-600 text-white'
                 : 'bg-gray-200 text-gray-700'
             }`}
           >

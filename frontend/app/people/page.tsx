@@ -50,19 +50,19 @@ export default function PeoplePage() {
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-purple-600 text-white p-6 rounded-lg shadow">
+              <div className="bg-indigo-600 text-white p-6 rounded-lg shadow">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-purple-200">Total People</p>
+                    <p className="text-sm text-indigo-200">Total People</p>
                     <p className="text-3xl font-bold">{people.length}</p>
                   </div>
                   <div className="text-4xl">👥</div>
                 </div>
               </div>
-              <div className="bg-purple-600 text-white p-6 rounded-lg shadow">
+              <div className="bg-indigo-600 text-white p-6 rounded-lg shadow">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-purple-200">Active People</p>
+                    <p className="text-sm text-indigo-200">Active People</p>
                     <p className="text-3xl font-bold">
                       {people.filter((p) => p.status === 'ACTIVE').length}
                     </p>
@@ -70,10 +70,10 @@ export default function PeoplePage() {
                   <div className="text-4xl">✓</div>
                 </div>
               </div>
-              <div className="bg-purple-600 text-white p-6 rounded-lg shadow">
+              <div className="bg-indigo-600 text-white p-6 rounded-lg shadow">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-purple-200">Contact Coverage</p>
+                    <p className="text-sm text-indigo-200">Contact Coverage</p>
                     <p className="text-3xl font-bold">100%</p>
                   </div>
                   <div className="text-4xl">📞</div>
@@ -90,7 +90,7 @@ export default function PeoplePage() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search People Placeholder"
-                    className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                   <svg
                     className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
@@ -101,7 +101,7 @@ export default function PeoplePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                   Show Filters
                 </button>
               </div>
@@ -115,7 +115,7 @@ export default function PeoplePage() {
                 <p className="text-gray-500 mb-4">No people found. Add your first person to get started.</p>
                 <Link
                   href="/people/add"
-                  className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700"
+                  className="inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
                 >
                   Add Person
                 </Link>
@@ -123,7 +123,7 @@ export default function PeoplePage() {
             ) : (
               <div className="bg-white rounded-lg shadow overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-purple-600">
+                  <thead className="bg-indigo-600">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                         PERSON
@@ -150,8 +150,8 @@ export default function PeoplePage() {
                       <tr key={person.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                              <span className="text-purple-600 font-semibold">
+                            <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-indigo-600 font-semibold">
                                 {person.name.charAt(0).toUpperCase()}
                               </span>
                             </div>
@@ -177,7 +177,7 @@ export default function PeoplePage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <Link
                             href={`/people/${person.id}`}
-                            className="text-purple-600 hover:text-purple-900"
+                            className="text-indigo-600 hover:text-indigo-900"
                           >
                             View →
                           </Link>
@@ -192,7 +192,7 @@ export default function PeoplePage() {
             {/* Floating Action Button */}
             <Link
               href="/people/add"
-              className="fixed bottom-8 right-8 bg-purple-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-purple-700 transition-colors"
+              className="fixed bottom-8 right-8 bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-indigo-700 transition-colors"
             >
               <span className="text-2xl">+</span>
             </Link>

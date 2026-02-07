@@ -47,7 +47,7 @@ export default function LoanDetailsStep({ formData, setFormData }: Props) {
               setFormData(newData);
             }}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
 
@@ -59,7 +59,7 @@ export default function LoanDetailsStep({ formData, setFormData }: Props) {
             type="date"
             value={formData.endDate}
             onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
 
@@ -74,7 +74,7 @@ export default function LoanDetailsStep({ formData, setFormData }: Props) {
             required
             min="0"
             step="0.01"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
 
@@ -90,7 +90,7 @@ export default function LoanDetailsStep({ formData, setFormData }: Props) {
                 onChange={(e) => setFormData({ ...formData, interestRate: e.target.value })}
                 min="0"
                 step="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
 
@@ -101,7 +101,7 @@ export default function LoanDetailsStep({ formData, setFormData }: Props) {
               <select
                 value={formData.interestEvery}
                 onChange={(e) => setFormData({ ...formData, interestEvery: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="DAILY">Daily</option>
                 <option value="WEEKLY">Weekly</option>
@@ -128,7 +128,7 @@ export default function LoanDetailsStep({ formData, setFormData }: Props) {
               }
               setFormData(newData);
             }}
-            className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+            className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
           />
           <span>Add EMI</span>
         </label>
@@ -153,7 +153,7 @@ export default function LoanDetailsStep({ formData, setFormData }: Props) {
                 setFormData(newData);
               }}
               min="1"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
         )}
@@ -167,7 +167,7 @@ export default function LoanDetailsStep({ formData, setFormData }: Props) {
                 onChange={(e) =>
                   setFormData({ ...formData, hasCompounding: e.target.checked })
                 }
-                className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
               />
               <span>Do you wish to add compounding to this loan?</span>
             </label>
@@ -179,7 +179,7 @@ export default function LoanDetailsStep({ formData, setFormData }: Props) {
                 onChange={(e) =>
                   setFormData({ ...formData, dateToDateCalc: e.target.checked })
                 }
-                className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
               />
               <span>Date to Date Calculation?</span>
             </label>
@@ -193,7 +193,7 @@ export default function LoanDetailsStep({ formData, setFormData }: Props) {
           value={formData.remarks}
           onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
           rows={4}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
     </div>

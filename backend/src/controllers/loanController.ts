@@ -107,10 +107,14 @@ export const getAllLoans = async (req: AuthRequest, res: Response) => {
 export const getLoanById = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!id) {
+      return res.status(400).json({ error: 'Loan ID is required' });
     }
 
     const loan = await prisma.loan.findFirst({
@@ -132,13 +136,13 @@ export const getLoanById = async (req: AuthRequest, res: Response) => {
     }
 
     // Calculate totals
-    const recovered = loan.transactions
-      .filter((t) => t.type === 'PAYMENT')
-      .reduce((sum, t) => sum + t.amount, 0);
+    const recovered = (loan.transactions || [])
+      .filter((t: any) => t.type === 'PAYMENT')
+      .reduce((sum: number, t: any) => sum + t.amount, 0);
 
-    const topup = loan.transactions
-      .filter((t) => t.type === 'TOPUP')
-      .reduce((sum, t) => sum + t.amount, 0);
+    const topup = (loan.transactions || [])
+      .filter((t: any) => t.type === 'TOPUP')
+      .reduce((sum: number, t: any) => sum + t.amount, 0);
 
     const interest = InterestCalculator.calculateInterest(
       loan.principalAmount,
@@ -278,8 +282,12 @@ export const createLoan = async (req: AuthRequest, res: Response) => {
 export const updateLoan = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const updateData = req.body;
+
+    if (!id) {
+      return res.status(400).json({ error: 'Loan ID is required' });
+    }
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -319,10 +327,14 @@ export const updateLoan = async (req: AuthRequest, res: Response) => {
 export const deleteLoan = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!id) {
+      return res.status(400).json({ error: 'Loan ID is required' });
     }
 
     // Verify loan belongs to user
@@ -353,11 +365,15 @@ export const deleteLoan = async (req: AuthRequest, res: Response) => {
 export const recordPayment = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { amount, paymentMode, date, remarks } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!id) {
+      return res.status(400).json({ error: 'Loan ID is required' });
     }
 
     if (!amount || !paymentMode) {

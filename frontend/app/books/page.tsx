@@ -73,7 +73,7 @@ export default function BooksPage() {
                 <p className="text-gray-500 mb-4">No books found. Create your first book to get started.</p>
                 <button
                   onClick={() => setShowModal(true)}
-                  className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700"
+                  className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
                 >
                   Create Book
                 </button>
@@ -120,7 +120,7 @@ export default function BooksPage() {
                         onChange={(e) => setBookName(e.target.value)}
                         placeholder="Enter Book Name"
                         required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     </div>
 
@@ -138,7 +138,7 @@ export default function BooksPage() {
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                        className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                       >
                         {submitting ? 'Creating...' : 'Create Book'}
                       </button>

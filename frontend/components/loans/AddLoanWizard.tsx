@@ -118,7 +118,7 @@ export default function AddLoanWizard() {
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
                   currentStep >= step.id
-                    ? 'bg-purple-600 text-white'
+                    ? 'bg-indigo-600 text-white'
                     : 'bg-gray-300 text-gray-600'
                 }`}
               >
@@ -129,7 +129,7 @@ export default function AddLoanWizard() {
             {step.id < steps.length && (
               <div
                 className={`flex-1 h-1 mx-4 ${
-                  currentStep > step.id ? 'bg-purple-600' : 'bg-gray-300'
+                  currentStep > step.id ? 'bg-indigo-600' : 'bg-gray-300'
                 }`}
               />
             )}
@@ -169,7 +169,7 @@ export default function AddLoanWizard() {
         {currentStep < steps.length ? (
           <button
             onClick={next}
-            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
           >
             Next
           </button>
@@ -177,7 +177,7 @@ export default function AddLoanWizard() {
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
           >
             {loading ? 'Creating...' : 'Verify & Create Loan'}
           </button>

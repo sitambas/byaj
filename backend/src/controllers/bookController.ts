@@ -52,11 +52,15 @@ export const createBook = async (req: AuthRequest, res: Response) => {
 export const updateBook = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { name } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!id) {
+      return res.status(400).json({ error: 'Book ID is required' });
     }
 
     if (!name || name.trim() === '') {
@@ -87,10 +91,14 @@ export const updateBook = async (req: AuthRequest, res: Response) => {
 export const deleteBook = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!id) {
+      return res.status(400).json({ error: 'Book ID is required' });
     }
 
     // Verify book belongs to user

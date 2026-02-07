@@ -62,10 +62,14 @@ export const getAllPeople = async (req: AuthRequest, res: Response) => {
 export const getPersonById = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!id) {
+      return res.status(400).json({ error: 'Person ID is required' });
     }
 
     const person = await prisma.person.findFirst({
@@ -92,7 +96,7 @@ export const getPersonById = async (req: AuthRequest, res: Response) => {
     let totalLent = 0;
     let totalBorrowed = 0;
 
-    person.loans.forEach((loan) => {
+    person.loans.forEach((loan: any) => {
       if (loan.accountType === 'LENT') {
         totalLent += loan.principalAmount;
       } else {
@@ -162,11 +166,15 @@ export const createPerson = async (req: AuthRequest, res: Response) => {
 export const updatePerson = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { name, phone, address, accountNo } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!id) {
+      return res.status(400).json({ error: 'Person ID is required' });
     }
 
     // Verify person belongs to user's book
@@ -201,10 +209,14 @@ export const updatePerson = async (req: AuthRequest, res: Response) => {
 export const deletePerson = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!id) {
+      return res.status(400).json({ error: 'Person ID is required' });
     }
 
     // Verify person belongs to user's book

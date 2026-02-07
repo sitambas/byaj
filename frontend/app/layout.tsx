@@ -1,4 +1,6 @@
-import type { Metadata } from "next";
+'use client';
+
+import { useEffect } from 'react';
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -13,16 +15,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "ByajBook - Loan Management System",
-  description: "Digitalizing lending for Bharat",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  useEffect(() => {
+    document.title = "ByajBook - Loan Management System";
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', 'Digitalizing lending for Bharat');
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = 'description';
+      meta.content = 'Digitalizing lending for Bharat';
+      document.head.appendChild(meta);
+    }
+  }, []);
+
   return (
     <html lang="en">
       <body
