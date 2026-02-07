@@ -45,6 +45,7 @@ export const getAllPeople = async (req: AuthRequest, res: Response) => {
         phone: person.phone,
         address: person.address,
         accountNo: person.accountNo,
+        kycDocuments: person.kycDocuments ? JSON.parse(person.kycDocuments) : null,
         loansCount: person._count.loans,
         status: 'ACTIVE', // TODO: Calculate based on loans
         createdAt: person.createdAt,
@@ -78,6 +79,12 @@ export const getPersonById = async (req: AuthRequest, res: Response) => {
         book: { userId },
       },
       include: {
+        book: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         loans: {
           include: {
             transactions: {
@@ -120,10 +127,64 @@ export const getPersonById = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// Generate a unique 10-digit account number with series logic
+async function generateAccountNumber(bookId: string): Promise<string> {
+  // Get the count of people in this book to create sequential numbering
+  const personCount = await prisma.person.count({
+    where: { bookId },
+  });
+
+  // Generate book prefix from bookId (first 3 characters converted to numbers, take first 2)
+  // This creates a series identifier for each book/branch
+  const bookHash = bookId
+    .split('')
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const bookPrefix = (bookHash % 100).toString().padStart(2, '0');
+
+  // Sequential number within the book (6 digits, starting from 1)
+  // This ensures each customer in a branch gets a unique sequential number
+  const sequentialNumber = (personCount + 1).toString().padStart(6, '0');
+
+  // Generate random 2 digits for additional uniqueness
+  const randomDigits = Math.floor(Math.random() * 100)
+    .toString()
+    .padStart(2, '0');
+
+  // Combine: 2 (book prefix) + 6 (sequential) + 2 (random) = 10 digits
+  let accountNo = bookPrefix + sequentialNumber + randomDigits;
+
+  // Ensure uniqueness - check if account number already exists in this book
+  let attempts = 0;
+  while (attempts < 10) {
+    const existing = await prisma.person.findFirst({
+      where: { accountNo, bookId },
+    });
+
+    if (!existing) {
+      break; // Account number is unique
+    }
+
+    // Regenerate random digits if collision occurs
+    const newRandomDigits = Math.floor(Math.random() * 100)
+      .toString()
+      .padStart(2, '0');
+    accountNo = bookPrefix + sequentialNumber + newRandomDigits;
+    attempts++;
+  }
+
+  // Final fallback: if still not unique after 10 attempts, use timestamp-based suffix
+  if (attempts >= 10) {
+    const timestampSuffix = Date.now().toString().slice(-2);
+    accountNo = bookPrefix + sequentialNumber + timestampSuffix;
+  }
+
+  return accountNo;
+}
+
 export const createPerson = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
-    const { name, phone, address, accountNo, bookId } = req.body;
+    const { name, phone, address, accountNo, bookId, kycDocuments } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -146,13 +207,30 @@ export const createPerson = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Book not found' });
     }
 
+    // Generate account number automatically if not provided
+    let finalAccountNo = accountNo?.trim() || null;
+    if (!finalAccountNo) {
+      finalAccountNo = await generateAccountNumber(bookId);
+    }
+
+    // Handle KYC documents - can be JSON string or object
+    let kycDocs = null;
+    if (kycDocuments) {
+      if (typeof kycDocuments === 'string') {
+        kycDocs = kycDocuments;
+      } else {
+        kycDocs = JSON.stringify(kycDocuments);
+      }
+    }
+
     const person = await prisma.person.create({
       data: {
         name: name.trim(),
         phone: phone.trim(),
         address: address?.trim() || null,
-        accountNo: accountNo?.trim() || null,
+        accountNo: finalAccountNo,
         bookId,
+        kycDocuments: kycDocs,
       },
     });
 

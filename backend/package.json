@@ -13,7 +13,11 @@
     "seed:roles": "ts-node src/scripts/seedRoles.ts",
     "set:superadmin": "ts-node src/scripts/setSuperAdmin.ts"
   },
-  "keywords": ["loan", "management", "api"],
+  "keywords": [
+    "loan",
+    "management",
+    "api"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -23,12 +27,14 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
     "prisma": "^5.19.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.7",
+    "@types/multer": "^1.4.13",
     "@types/node": "^22.10.2",
     "nodemon": "^3.1.7",
     "ts-node": "^10.9.2",

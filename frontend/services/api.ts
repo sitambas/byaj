@@ -16,6 +16,10 @@ api.interceptors.request.use((config) => {
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Don't set Content-Type for FormData, let browser set it with boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
   }
   return config;
 });
@@ -55,6 +59,18 @@ export const personAPI = {
   create: (data: any) => api.post('/api/people', data),
   update: (id: string, data: any) => api.put(`/api/people/${id}`, data),
   delete: (id: string) => api.delete(`/api/people/${id}`),
+};
+
+export const uploadAPI = {
+  uploadKYC: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/api/upload/kyc', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
 
 export const loanAPI = {

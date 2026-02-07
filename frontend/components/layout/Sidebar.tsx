@@ -19,9 +19,9 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { name: 'Dashboard', path: '/dashboard', icon: '🏠' },
-  { name: 'Book Management', path: '/books', icon: '📚', requiresModule: 'books' },
+  { name: 'Branch Management', path: '/books', icon: '📚', requiresModule: 'books' },
   { name: 'Loan accounts', path: '/loans', icon: '💰' },
-  { name: 'People', path: '/people', icon: '👥' },
+  { name: 'Customer List', path: '/customer', icon: '👥' },
   { name: 'Transactions', path: '/transactions', icon: '📊' },
   { name: 'Reports', path: '/reports', icon: '📄' },
   { name: 'Interest Calculator', path: '/calculator', icon: '🧮' },

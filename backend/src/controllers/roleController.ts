@@ -5,7 +5,7 @@ import { PermissionRequest } from '../middleware/permissions';
 // Available modules in the system
 export const AVAILABLE_MODULES = [
   { id: 'dashboard', name: 'Dashboard', description: 'View dashboard and summaries' },
-  { id: 'books', name: 'Book Management', description: 'Manage books and contexts' },
+  { id: 'books', name: 'Branch Management', description: 'Manage books and contexts' },
   { id: 'loans', name: 'Loan Management', description: 'Create, view, and manage loans' },
   { id: 'people', name: 'People Management', description: 'Manage people/contacts' },
   { id: 'transactions', name: 'Transactions', description: 'View and manage transactions' },

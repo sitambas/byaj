@@ -56,16 +56,17 @@ model Book {
 }
 
 model Person {
-  id        String   @id @default(cuid())
-  name      String
-  phone     String
-  address   String?
-  accountNo String?
-  bookId    String
-  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  loans     Loan[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  phone           String
+  address         String?
+  accountNo       String?
+  bookId          String
+  book            Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  kycDocuments    String?  // JSON string of KYC document URLs: { aadhaar?: string, pan?: string, photo?: string, addressProof?: string }
+  loans           Loan[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([bookId])
   @@index([phone])

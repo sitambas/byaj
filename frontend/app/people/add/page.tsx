@@ -16,7 +16,6 @@ export default function AddPersonPage() {
     name: '',
     phone: '',
     address: '',
-    accountNo: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -38,7 +37,7 @@ export default function AddPersonPage() {
       });
       router.push('/people');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create person');
+      setError(err.response?.data?.error || 'Failed to create customer');
     } finally {
       setLoading(false);
     }
@@ -58,7 +57,7 @@ export default function AddPersonPage() {
               >
                 ← Back
               </button>
-              <h1 className="text-3xl font-bold text-gray-900">Add New Person</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Add New Customer</h1>
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow max-w-2xl">
@@ -115,17 +114,10 @@ export default function AddPersonPage() {
                   />
                 </div>
 
-                <div>
-                  <label htmlFor="accountNo" className="block text-sm font-medium text-gray-700 mb-2">
-                    Account Number
-                  </label>
-                  <input
-                    id="accountNo"
-                    type="text"
-                    value={formData.accountNo}
-                    onChange={(e) => setFormData({ ...formData, accountNo: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
+                <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg">
+                  <p className="text-sm">
+                    <strong>Note:</strong> Account number will be automatically generated as a 10-digit number when you create the customer.
+                  </p>
                 </div>
 
                 <div className="flex space-x-4">
@@ -141,7 +133,7 @@ export default function AddPersonPage() {
                     disabled={loading}
                     className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                   >
-                    {loading ? 'Creating...' : 'Create Person'}
+                    {loading ? 'Creating...' : 'Create Customer'}
                   </button>
                 </div>
               </form>

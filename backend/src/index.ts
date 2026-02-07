@@ -41,6 +41,10 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve uploaded files
+import path from 'path';
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
 // Health check route
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'ByajBook API is running' });
@@ -59,6 +63,7 @@ import personRoutes from './routes/personRoutes';
 import loanRoutes from './routes/loanRoutes';
 import staffRoutes from './routes/staffRoutes';
 import roleRoutes from './routes/roleRoutes';
+import uploadRoutes from './routes/uploadRoutes';
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -68,6 +73,7 @@ app.use('/api/people', personRoutes);
 app.use('/api/loans', loanRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -54,7 +54,7 @@ export default function BooksPage() {
       setShowModal(false);
       fetchBooks();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to create book');
+      alert(error.response?.data?.error || 'Failed to create branch');
     } finally {
       setSubmitting(false);
     }
@@ -69,9 +69,9 @@ export default function BooksPage() {
           <main className="flex-1 p-6">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Book Management</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Branch Management</h1>
                 {isOwner && (
-                  <p className="text-sm text-gray-500 mt-1">Viewing all books (Super Admin)</p>
+                  <p className="text-sm text-gray-500 mt-1">Viewing all branches (Super Admin)</p>
                 )}
               </div>
               {hasBooksPermission && (
@@ -79,30 +79,30 @@ export default function BooksPage() {
                   onClick={() => setShowModal(true)}
                   className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
                 >
-                  + Add New Book
+                  + Add New Branch
                 </button>
               )}
             </div>
 
             {!hasBooksPermission && (
               <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg mb-6">
-                You don't have permission to modify books. You can only view them.
+                You don't have permission to modify branches. You can only view them.
               </div>
             )}
 
             {loading ? (
-              <div className="text-center py-12 text-gray-500">Loading books...</div>
+              <div className="text-center py-12 text-gray-500">Loading branches...</div>
             ) : books.length === 0 ? (
               <div className="bg-white p-12 rounded-lg shadow text-center">
-                <p className="text-gray-500 mb-4">No books found.</p>
+                <p className="text-gray-500 mb-4">No branches found.</p>
                 {hasBooksPermission && (
                   <>
-                    <p className="text-gray-500 mb-4">Create your first book to get started.</p>
+                    <p className="text-gray-500 mb-4">Create your first branch to get started.</p>
                     <button
                       onClick={() => setShowModal(true)}
                       className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
                     >
-                      Create Book
+                      Create Branch
                     </button>
                   </>
                 )}
@@ -112,7 +112,7 @@ export default function BooksPage() {
                 {books.map((book) => (
                   <div key={book.id} className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow">
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">{book.name}</h3>
-                    <p className="text-sm text-gray-500 mb-1">Book ID: {book.id.slice(0, 8)}...</p>
+                    <p className="text-sm text-gray-500 mb-1">Branch ID: {book.id.slice(0, 8)}...</p>
                     {book.owner && (
                       <p className="text-xs text-indigo-600 mt-2 pt-2 border-t border-gray-200">
                         Owner: {book.owner.name || book.owner.phone}
@@ -123,12 +123,12 @@ export default function BooksPage() {
               </div>
             )}
 
-            {/* Add Book Modal */}
+            {/* Add Branch Modal */}
             {showModal && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-lg p-6 w-full max-w-md">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-gray-900">Add New Book</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">Add New Branch</h2>
                     <button
                       onClick={() => {
                         setShowModal(false);
@@ -145,14 +145,14 @@ export default function BooksPage() {
                   <form onSubmit={handleCreateBook}>
                     <div className="mb-4">
                       <label htmlFor="bookName" className="block text-sm font-medium text-gray-700 mb-2">
-                        Book name *
+                        Branch name *
                       </label>
                       <input
                         id="bookName"
                         type="text"
                         value={bookName}
                         onChange={(e) => setBookName(e.target.value)}
-                        placeholder="Enter Book Name"
+                        placeholder="Enter Branch Name"
                         required
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
@@ -174,7 +174,7 @@ export default function BooksPage() {
                         disabled={submitting}
                         className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                       >
-                        {submitting ? 'Creating...' : 'Create Book'}
+                        {submitting ? 'Creating...' : 'Create Branch'}
                       </button>
                     </div>
                   </form>
