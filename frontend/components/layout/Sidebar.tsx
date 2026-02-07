@@ -5,10 +5,18 @@ import { usePathname } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
 import { setSelectedBook } from '@/store/slices/bookSlice';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Logo from '@/components/Logo';
+import { staffAPI } from '@/services/api';
 
-const menuItems = [
+interface MenuItem {
+  name: string;
+  path: string;
+  icon: string;
+  requiresAdmin?: boolean;
+}
+
+const menuItems: MenuItem[] = [
   { name: 'Dashboard', path: '/dashboard', icon: '🏠' },
   { name: 'Book Management', path: '/books', icon: '📚' },
   { name: 'Loan accounts', path: '/loans', icon: '💰' },
@@ -17,7 +25,7 @@ const menuItems = [
   { name: 'Reports', path: '/reports', icon: '📄' },
   { name: 'Interest Calculator', path: '/calculator', icon: '🧮' },
   { name: 'Deposits', path: '/deposits', icon: '🏦' },
-  { name: 'My Staff', path: '/staff', icon: '👨‍💼' },
+  { name: 'My Staff', path: '/staff', icon: '👨‍💼', requiresAdmin: true },
 ];
 
 export default function Sidebar() {
@@ -25,6 +33,8 @@ export default function Sidebar() {
   const dispatch = useDispatch();
   const books = useSelector((state: RootState) => state.book.books);
   const selectedBook = useSelector((state: RootState) => state.book.selectedBook);
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const [hasAdminAccess, setHasAdminAccess] = useState<boolean | null>(null);
 
   useEffect(() => {
     // Auto-select first book if available and none selected
@@ -33,6 +43,35 @@ export default function Sidebar() {
     }
   }, [books, selectedBook, dispatch]);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      checkAdminAccess();
+    }
+  }, [isAuthenticated]);
+
+  const checkAdminAccess = async () => {
+    try {
+      const response = await staffAPI.getMe();
+      const staff = response.data.staff;
+      setHasAdminAccess(staff.role === 'ADMIN');
+    } catch (err: any) {
+      // If 404, user is owner (no staff record) - has full access
+      if (err.response?.status === 404) {
+        setHasAdminAccess(true);
+      } else {
+        setHasAdminAccess(false);
+      }
+    }
+  };
+
+  // Filter menu items based on admin access
+  const visibleMenuItems = menuItems.filter((item) => {
+    if (item.requiresAdmin) {
+      return hasAdminAccess === true;
+    }
+    return true;
+  });
+
   return (
     <div className="w-64 bg-indigo-900 text-white min-h-screen p-4">
       <div className="mb-8">
@@ -40,7 +79,7 @@ export default function Sidebar() {
       </div>
       
       <nav className="space-y-2">
-        {menuItems.map((item) => {
+        {visibleMenuItems.map((item) => {
           const isActive = pathname === item.path || pathname?.startsWith(item.path + '/');
           return (
             <Link

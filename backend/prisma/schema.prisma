@@ -20,11 +20,25 @@ model User {
   staff     Staff?
 }
 
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isSystem    Boolean  @default(false) // System roles (ADMIN, MANAGER, etc.) cannot be deleted
+  permissions String   // JSON string of module permissions
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  staff       Staff[]
+}
+
 model Staff {
   id        String   @id @default(cuid())
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      String   // ADMIN, STAFF, etc.
+  roleId    String?
+  role      Role?    @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  roleName  String   // Keep for backward compatibility and quick access
+  permissions String? // JSON string of custom module permissions (overrides role permissions)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

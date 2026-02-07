@@ -84,5 +84,14 @@ export const dashboardAPI = {
   dueLoans: (filters?: any) => api.get('/api/dashboard/due-loans', { params: filters }),
 };
 
+export const staffAPI = {
+  getAll: () => api.get('/api/staff'),
+  getById: (id: string) => api.get(`/api/staff/${id}`),
+  getMe: () => api.get('/api/staff/me'),
+  create: (data: { phone: string; name?: string; role: string }) => api.post('/api/staff', data),
+  update: (id: string, data: { role?: string; name?: string }) => api.put(`/api/staff/${id}`, data),
+  delete: (id: string) => api.delete(`/api/staff/${id}`),
+};
+
 export default api;
 

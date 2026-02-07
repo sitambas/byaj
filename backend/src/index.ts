@@ -57,6 +57,7 @@ import bookRoutes from './routes/bookRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import personRoutes from './routes/personRoutes';
 import loanRoutes from './routes/loanRoutes';
+import staffRoutes from './routes/staffRoutes';
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -64,6 +65,7 @@ app.use('/api/books', bookRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/people', personRoutes);
 app.use('/api/loans', loanRoutes);
+app.use('/api/staff', staffRoutes);
 
 // 404 handler
 app.use((req, res) => {
