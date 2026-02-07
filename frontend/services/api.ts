@@ -88,9 +88,18 @@ export const staffAPI = {
   getAll: () => api.get('/api/staff'),
   getById: (id: string) => api.get(`/api/staff/${id}`),
   getMe: () => api.get('/api/staff/me'),
-  create: (data: { phone: string; name?: string; role: string }) => api.post('/api/staff', data),
-  update: (id: string, data: { role?: string; name?: string }) => api.put(`/api/staff/${id}`, data),
+  create: (data: { phone: string; name?: string; roleId?: string; roleName?: string; permissions?: string[] }) => api.post('/api/staff', data),
+  update: (id: string, data: { roleId?: string | null; roleName?: string; permissions?: string[] | null; name?: string }) => api.put(`/api/staff/${id}`, data),
   delete: (id: string) => api.delete(`/api/staff/${id}`),
+};
+
+export const roleAPI = {
+  getAll: () => api.get('/api/roles'),
+  getById: (id: string) => api.get(`/api/roles/${id}`),
+  getModules: () => api.get('/api/roles/modules'),
+  create: (data: { name: string; description?: string; permissions: string[] }) => api.post('/api/roles', data),
+  update: (id: string, data: { name?: string; description?: string; permissions?: string[] }) => api.put(`/api/roles/${id}`, data),
+  delete: (id: string) => api.delete(`/api/roles/${id}`),
 };
 
 export default api;

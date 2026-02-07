@@ -13,7 +13,14 @@ interface StaffMember {
   userId: string;
   phone: string;
   name: string | null;
-  role: string;
+  roleId: string | null;
+  roleName: string;
+  role: {
+    id: string;
+    name: string;
+    permissions: string[];
+  } | null;
+  permissions: string[] | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -55,8 +62,8 @@ export default function StaffPage() {
     }
   };
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
+  const getRoleBadgeColor = (roleName: string) => {
+    switch (roleName) {
       case 'ADMIN':
         return 'bg-red-100 text-red-800';
       case 'MANAGER':
@@ -66,16 +73,17 @@ export default function StaffPage() {
       case 'VIEWER':
         return 'bg-gray-100 text-gray-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-purple-100 text-purple-800';
     }
   };
 
   const filteredStaff = staff.filter((member) => {
     const searchLower = search.toLowerCase();
+    const roleDisplayName = member.role?.name || member.roleName;
     return (
       member.name?.toLowerCase().includes(searchLower) ||
       member.phone.includes(search) ||
-      member.role.toLowerCase().includes(searchLower)
+      roleDisplayName.toLowerCase().includes(searchLower)
     );
   });
 
@@ -89,12 +97,20 @@ export default function StaffPage() {
             <main className="flex-1 p-6">
             <div className="mb-6 flex items-center justify-between">
               <h1 className="text-3xl font-bold text-gray-900">My Staff</h1>
-              <Link
-                href="/staff/add"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
-              >
-                + Add Staff
-              </Link>
+              <div className="flex space-x-3">
+                <Link
+                  href="/staff/roles"
+                  className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+                >
+                  Manage Roles
+                </Link>
+                <Link
+                  href="/staff/add"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+                >
+                  + Add Staff
+                </Link>
+              </div>
             </div>
 
             {/* Summary Cards */}
@@ -113,7 +129,7 @@ export default function StaffPage() {
                   <div>
                     <p className="text-sm text-indigo-200">Admins</p>
                     <p className="text-3xl font-bold">
-                      {staff.filter((s) => s.role === 'ADMIN').length}
+                      {staff.filter((s) => s.roleName === 'ADMIN').length}
                     </p>
                   </div>
                   <div className="text-4xl">👑</div>
@@ -124,7 +140,7 @@ export default function StaffPage() {
                   <div>
                     <p className="text-sm text-indigo-200">Managers</p>
                     <p className="text-3xl font-bold">
-                      {staff.filter((s) => s.role === 'MANAGER').length}
+                      {staff.filter((s) => s.roleName === 'MANAGER').length}
                     </p>
                   </div>
                   <div className="text-4xl">📋</div>
@@ -135,7 +151,7 @@ export default function StaffPage() {
                   <div>
                     <p className="text-sm text-indigo-200">Staff Members</p>
                     <p className="text-3xl font-bold">
-                      {staff.filter((s) => s.role === 'STAFF' || s.role === 'VIEWER').length}
+                      {staff.filter((s) => s.roleName === 'STAFF' || s.roleName === 'VIEWER').length}
                     </p>
                   </div>
                   <div className="text-4xl">👥</div>
@@ -226,10 +242,13 @@ export default function StaffPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
                             className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(
-                              member.role
+                              member.roleName
                             )}`}
                           >
-                            {member.role}
+                            {member.role?.name || member.roleName}
+                            {member.roleId && (
+                              <span className="ml-1 text-xs">(Custom)</span>
+                            )}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

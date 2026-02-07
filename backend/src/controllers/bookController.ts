@@ -10,12 +10,44 @@ export const getAllBooks = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const books = await prisma.book.findMany({
+    // Check if user is owner (not in Staff table) - owners see all books
+    const staff = await prisma.staff.findUnique({
       where: { userId },
+      select: { id: true },
+    });
+
+    // If user is not in Staff table, they are the owner - show all books
+    // If user is staff, show only their own books
+    const whereClause = staff ? { userId } : {};
+
+    const books = await prisma.book.findMany({
+      where: whereClause,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
 
-    res.json({ books });
+    res.json({ 
+      books: books.map(book => ({
+        id: book.id,
+        name: book.name,
+        userId: book.userId,
+        owner: staff ? undefined : {
+          id: book.user.id,
+          name: book.user.name,
+          phone: book.user.phone,
+        },
+        createdAt: book.createdAt,
+        updatedAt: book.updatedAt,
+      }))
+    });
   } catch (error: any) {
     console.error('Get books error:', error);
     res.status(500).json({ error: error.message || 'Internal server error' });

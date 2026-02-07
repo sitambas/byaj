@@ -24,7 +24,7 @@ export const requireRole = (...allowedRoles: Role[]) => {
       // Get user's staff record to check role
       const staff = await prisma.staff.findUnique({
         where: { userId },
-        select: { role: true },
+        select: { roleName: true, roleId: true },
       });
 
       // If user is not staff, they are the owner (has all permissions)
@@ -34,7 +34,7 @@ export const requireRole = (...allowedRoles: Role[]) => {
         return next();
       }
 
-      const userRole = staff.role as Role;
+      const userRole = staff.roleName as Role;
       req.userRole = userRole;
       req.isOwner = false;
 

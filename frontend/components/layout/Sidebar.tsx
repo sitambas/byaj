@@ -7,18 +7,19 @@ import { RootState } from '@/store';
 import { setSelectedBook } from '@/store/slices/bookSlice';
 import { useEffect, useState } from 'react';
 import Logo from '@/components/Logo';
-import { staffAPI } from '@/services/api';
+import { getUserPermissions } from '@/utils/permissions';
 
 interface MenuItem {
   name: string;
   path: string;
   icon: string;
   requiresAdmin?: boolean;
+  requiresModule?: string; // Module ID required to see this menu item
 }
 
 const menuItems: MenuItem[] = [
   { name: 'Dashboard', path: '/dashboard', icon: '🏠' },
-  { name: 'Book Management', path: '/books', icon: '📚' },
+  { name: 'Book Management', path: '/books', icon: '📚', requiresModule: 'books' },
   { name: 'Loan accounts', path: '/loans', icon: '💰' },
   { name: 'People', path: '/people', icon: '👥' },
   { name: 'Transactions', path: '/transactions', icon: '📊' },
@@ -35,6 +36,7 @@ export default function Sidebar() {
   const selectedBook = useSelector((state: RootState) => state.book.selectedBook);
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
   const [hasAdminAccess, setHasAdminAccess] = useState<boolean | null>(null);
+  const [userPermissions, setUserPermissions] = useState<string[]>([]);
 
   useEffect(() => {
     // Auto-select first book if available and none selected
@@ -45,29 +47,28 @@ export default function Sidebar() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      checkAdminAccess();
+      checkAccess();
     }
   }, [isAuthenticated]);
 
-  const checkAdminAccess = async () => {
+  const checkAccess = async () => {
     try {
-      const response = await staffAPI.getMe();
-      const staff = response.data.staff;
-      setHasAdminAccess(staff.role === 'ADMIN');
+      const permissions = await getUserPermissions();
+      setUserPermissions(permissions.modules);
+      setHasAdminAccess(permissions.isOwner || permissions.roleName === 'ADMIN');
     } catch (err: any) {
-      // If 404, user is owner (no staff record) - has full access
-      if (err.response?.status === 404) {
-        setHasAdminAccess(true);
-      } else {
-        setHasAdminAccess(false);
-      }
+      setHasAdminAccess(false);
+      setUserPermissions([]);
     }
   };
 
-  // Filter menu items based on admin access
+  // Filter menu items based on admin access and module permissions
   const visibleMenuItems = menuItems.filter((item) => {
     if (item.requiresAdmin) {
       return hasAdminAccess === true;
+    }
+    if (item.requiresModule) {
+      return userPermissions.includes(item.requiresModule);
     }
     return true;
   });

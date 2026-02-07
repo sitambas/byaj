@@ -4,6 +4,11 @@ interface Book {
   id: string;
   name: string;
   userId: string;
+  owner?: {
+    id: string;
+    name: string | null;
+    phone: string;
+  };
 }
 
 interface BookState {

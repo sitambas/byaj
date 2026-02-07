@@ -8,18 +8,29 @@ import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { bookAPI } from '@/services/api';
+import { hasModuleAccess, getUserPermissions } from '@/utils/permissions';
 
 export default function BooksPage() {
   const dispatch = useDispatch();
   const books = useSelector((state: RootState) => state.book.books);
   const [loading, setLoading] = useState(true);
+  const [hasBooksPermission, setHasBooksPermission] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [bookName, setBookName] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    checkPermission();
     fetchBooks();
   }, []);
+
+  const checkPermission = async () => {
+    const hasAccess = await hasModuleAccess('books');
+    setHasBooksPermission(hasAccess);
+    const permissions = await getUserPermissions();
+    setIsOwner(permissions.isOwner);
+  };
 
   const fetchBooks = async () => {
     try {
@@ -57,33 +68,56 @@ export default function BooksPage() {
           <Header />
           <main className="flex-1 p-6">
             <div className="mb-6 flex items-center justify-between">
-              <h1 className="text-3xl font-bold text-gray-900">Book Management</h1>
-              <button
-                onClick={() => setShowModal(true)}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-              >
-                + Add New Book
-              </button>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Book Management</h1>
+                {isOwner && (
+                  <p className="text-sm text-gray-500 mt-1">Viewing all books (Super Admin)</p>
+                )}
+              </div>
+              {hasBooksPermission && (
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                >
+                  + Add New Book
+                </button>
+              )}
             </div>
+
+            {!hasBooksPermission && (
+              <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg mb-6">
+                You don't have permission to modify books. You can only view them.
+              </div>
+            )}
 
             {loading ? (
               <div className="text-center py-12 text-gray-500">Loading books...</div>
             ) : books.length === 0 ? (
               <div className="bg-white p-12 rounded-lg shadow text-center">
-                <p className="text-gray-500 mb-4">No books found. Create your first book to get started.</p>
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
-                >
-                  Create Book
-                </button>
+                <p className="text-gray-500 mb-4">No books found.</p>
+                {hasBooksPermission && (
+                  <>
+                    <p className="text-gray-500 mb-4">Create your first book to get started.</p>
+                    <button
+                      onClick={() => setShowModal(true)}
+                      className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
+                    >
+                      Create Book
+                    </button>
+                  </>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {books.map((book) => (
                   <div key={book.id} className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow">
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">{book.name}</h3>
-                    <p className="text-sm text-gray-500">Book ID: {book.id.slice(0, 8)}...</p>
+                    <p className="text-sm text-gray-500 mb-1">Book ID: {book.id.slice(0, 8)}...</p>
+                    {book.owner && (
+                      <p className="text-xs text-indigo-600 mt-2 pt-2 border-t border-gray-200">
+                        Owner: {book.owner.name || book.owner.phone}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

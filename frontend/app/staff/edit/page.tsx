@@ -6,7 +6,22 @@ import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import AdminRoute from '@/components/auth/AdminRoute';
-import { staffAPI } from '@/services/api';
+import { staffAPI, roleAPI } from '@/services/api';
+import Link from 'next/link';
+
+interface Role {
+  id: string;
+  name: string;
+  description: string | null;
+  isSystem: boolean;
+  permissions: string[];
+}
+
+interface Module {
+  id: string;
+  name: string;
+  description: string;
+}
 
 export default function EditStaffPage() {
   const router = useRouter();
@@ -15,12 +30,19 @@ export default function EditStaffPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [modules, setModules] = useState<Module[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
-    role: 'STAFF',
+    roleType: 'system' as 'system' | 'custom',
+    roleId: '',
+    roleName: 'STAFF',
+    permissions: [] as string[],
   });
 
   useEffect(() => {
+    fetchRolesAndModules();
     if (staffId) {
       fetchStaff();
     } else {
@@ -29,6 +51,21 @@ export default function EditStaffPage() {
     }
   }, [staffId]);
 
+  const fetchRolesAndModules = async () => {
+    try {
+      const [rolesRes, modulesRes] = await Promise.all([
+        roleAPI.getAll(),
+        roleAPI.getModules(),
+      ]);
+      setRoles(rolesRes.data.roles);
+      setModules(modulesRes.data.modules);
+    } catch (err: any) {
+      console.error('Failed to fetch roles/modules:', err);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
   const fetchStaff = async () => {
     if (!staffId) return;
     
@@ -36,14 +73,41 @@ export default function EditStaffPage() {
       setLoading(true);
       const response = await staffAPI.getById(staffId);
       const staff = response.data.staff;
+      
+      const roleType = staff.roleId ? 'custom' : 'system';
+      const permissions = staff.permissions || staff.role?.permissions || [];
+      
       setFormData({
         name: staff.name || '',
-        role: staff.role,
+        roleType,
+        roleId: staff.roleId || '',
+        roleName: staff.roleName || 'STAFF',
+        permissions: Array.isArray(permissions) ? permissions : [],
       });
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to load staff member');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePermissionToggle = (moduleId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      permissions: prev.permissions.includes(moduleId)
+        ? prev.permissions.filter((id) => id !== moduleId)
+        : [...prev.permissions, moduleId],
+    }));
+  };
+
+  const handleRoleChange = (roleId: string) => {
+    const selectedRole = roles.find((r) => r.id === roleId);
+    if (selectedRole) {
+      setFormData((prev) => ({
+        ...prev,
+        roleId: roleId,
+        permissions: selectedRole.permissions || [],
+      }));
     }
   };
 
@@ -55,10 +119,20 @@ export default function EditStaffPage() {
     setSaving(true);
 
     try {
-      await staffAPI.update(staffId, {
+      const payload: any = {
         name: formData.name || undefined,
-        role: formData.role,
-      });
+      };
+
+      if (formData.roleType === 'custom' && formData.roleId) {
+        payload.roleId = formData.roleId;
+        payload.permissions = formData.permissions.length > 0 ? formData.permissions : null;
+      } else {
+        payload.roleName = formData.roleName;
+        payload.roleId = null; // Clear custom role
+        payload.permissions = formData.permissions.length > 0 ? formData.permissions : null;
+      }
+
+      await staffAPI.update(staffId, payload);
       router.push('/staff');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to update staff member');
@@ -145,24 +219,98 @@ export default function EditStaffPage() {
                   </div>
 
                   <div>
-                    <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                      Role <span className="text-red-500">*</span>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Role Type <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      id="role"
-                      value={formData.role}
-                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                      required
-                      disabled={saving}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100"
-                    >
-                      <option value="VIEWER">Viewer - Read only access</option>
-                      <option value="STAFF">Staff - Basic operations</option>
-                      <option value="MANAGER">Manager - Advanced operations</option>
-                      <option value="ADMIN">Admin - Full access</option>
-                    </select>
+                    <div className="flex space-x-4 mb-4">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          value="system"
+                          checked={formData.roleType === 'system'}
+                          onChange={(e) => setFormData({ ...formData, roleType: e.target.value, roleId: '' })}
+                          disabled={saving}
+                          className="mr-2"
+                        />
+                        System Role
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          value="custom"
+                          checked={formData.roleType === 'custom'}
+                          onChange={(e) => setFormData({ ...formData, roleType: e.target.value, roleName: 'STAFF' })}
+                          disabled={saving}
+                          className="mr-2"
+                        />
+                        Custom Role
+                      </label>
+                    </div>
+
+                    {formData.roleType === 'system' ? (
+                      <select
+                        value={formData.roleName}
+                        onChange={(e) => setFormData({ ...formData, roleName: e.target.value, permissions: [] })}
+                        required
+                        disabled={saving}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100"
+                      >
+                        <option value="VIEWER">Viewer - Read only access</option>
+                        <option value="STAFF">Staff - Basic operations</option>
+                        <option value="MANAGER">Manager - Advanced operations</option>
+                        <option value="ADMIN">Admin - Full access</option>
+                      </select>
+                    ) : (
+                      <div>
+                        <select
+                          value={formData.roleId}
+                          onChange={(e) => handleRoleChange(e.target.value)}
+                          required
+                          disabled={saving || loadingData}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100"
+                        >
+                          <option value="">Select a custom role</option>
+                          {roles.filter((r) => !r.isSystem).map((role) => (
+                            <option key={role.id} value={role.id}>
+                              {role.name} {role.description && `- ${role.description}`}
+                            </option>
+                          ))}
+                        </select>
+                        {roles.filter((r) => !r.isSystem).length === 0 && (
+                          <p className="mt-2 text-sm text-gray-500">
+                            No custom roles available.{' '}
+                            <Link href="/staff/roles" className="text-indigo-600 hover:text-indigo-900">
+                              Create a role
+                            </Link>
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Module Permissions
+                    </label>
+                    <div className="border border-gray-300 rounded-lg p-4 space-y-3 max-h-64 overflow-y-auto">
+                      {modules.map((module) => (
+                        <label key={module.id} className="flex items-start space-x-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.permissions.includes(module.id)}
+                            onChange={() => handlePermissionToggle(module.id)}
+                            disabled={saving}
+                            className="mt-1 w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                          />
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">{module.name}</div>
+                            <div className="text-xs text-gray-500">{module.description}</div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
                     <p className="mt-2 text-sm text-gray-500">
-                      Select the appropriate role for this staff member based on their responsibilities.
+                      Select which modules this staff member can access. If a custom role is selected, these permissions will override the role's default permissions.
                     </p>
                   </div>
 
