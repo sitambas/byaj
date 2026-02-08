@@ -68,7 +68,7 @@ export default function AddLoanForm() {
 
   // Calculate Interest based on Yearly Rate and Tenure
   useEffect(() => {
-    if (formData.principalAmount && formData.interestRate && formData.tenure && formData.loanType === 'WITH_INTEREST') {
+    if (formData.principalAmount && formData.interestRate && formData.tenure) {
       const principal = parseFloat(formData.principalAmount);
       const yearlyRate = parseFloat(formData.interestRate);
       const tenure = parseFloat(formData.tenure);
@@ -124,7 +124,7 @@ export default function AddLoanForm() {
         emiAmount: ''
       }));
     }
-  }, [formData.principalAmount, formData.interestRate, formData.tenure, formData.interestCalc, formData.loanType]);
+  }, [formData.principalAmount, formData.interestRate, formData.tenure, formData.interestCalc]);
 
   // Calculate End Date based on Tenure and Interest Calculation
   useEffect(() => {
@@ -364,7 +364,7 @@ export default function AddLoanForm() {
               required
             />
           </div>
-          {formData.loanType === 'WITH_INTEREST' && (
+          
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Rate of Interest (Yearly %) *
@@ -376,10 +376,22 @@ export default function AddLoanForm() {
                 min="0"
                 step="0.01"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="23.95"
                 required
               />
             </div>
-          )}
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Process Fee (7.5% of Amount)
+            </label>
+            <input
+              type="text"
+              value={formData.processFee ? `₹${formData.processFee}` : ''}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
+              readOnly
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Start Date *
@@ -422,8 +434,7 @@ export default function AddLoanForm() {
               Number of {formData.interestCalc.toLowerCase().replace('_', ' ')} periods for the loan. End date will be calculated automatically.
             </p>
           </div>
-          {formData.loanType === 'WITH_INTEREST' && (
-            <>
+          
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Calculated Interest (Auto-calculated)
@@ -463,24 +474,12 @@ export default function AddLoanForm() {
                   EMI = (Principal + Interest) / {formData.tenure || 0} periods
                 </p>
               </div>
-            </>
-          )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Process Fee (7.5% of Amount)
-            </label>
-            <input
-              type="text"
-              value={formData.processFee ? `₹${formData.processFee}` : ''}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
-              readOnly
-            />
-          </div>
+           
         </div>
       </div>
 
       {/* EMI Breakdown Chart */}
-      {formData.loanType === 'WITH_INTEREST' && formData.principalAmount && formData.tenure && formData.calculatedInterest && (
+      {formData.principalAmount && formData.tenure && formData.calculatedInterest && (
         <div className="bg-white p-6 rounded-lg shadow">
           <h2 className="text-xl font-semibold mb-4">EMI Breakdown Chart</h2>
           <div className="overflow-x-auto">
