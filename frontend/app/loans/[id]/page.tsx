@@ -6,6 +6,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { loanAPI } from '@/services/api';
+import EMIPaymentModal from '@/components/loans/EMIPaymentModal';
 
 export default function LoanDetailsPage() {
   const params = useParams();
@@ -14,6 +15,7 @@ export default function LoanDetailsPage() {
   const [loan, setLoan] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showEMIPaymentModal, setShowEMIPaymentModal] = useState(false);
   const [paymentData, setPaymentData] = useState({
     amount: '',
     paymentMode: 'CASH',
@@ -50,6 +52,26 @@ export default function LoanDetailsPage() {
       fetchLoanDetails();
     } catch (error: any) {
       alert(error.response?.data?.error || 'Failed to record payment');
+    }
+  };
+
+  const handleEMIPayment = async (data: {
+    amount: number;
+    paymentMode: string;
+    date: string;
+    remarks: string;
+    emiPeriods: number[];
+  }) => {
+    try {
+      await loanAPI.recordPayment(loanId, {
+        amount: data.amount.toString(),
+        paymentMode: data.paymentMode,
+        date: data.date,
+        remarks: data.remarks || `EMI payment for periods: ${data.emiPeriods.join(', ')}`,
+      });
+      fetchLoanDetails();
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to record EMI payment');
     }
   };
 
@@ -289,15 +311,6 @@ export default function LoanDetailsPage() {
                       </span>
                     </div>
                   </div>
-
-                  <div className="mt-6 space-y-2">
-                    <button className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
-                      Add Topup
-                    </button>
-                    <button className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm">
-                      Transactions
-                    </button>
-                  </div>
                 </div>
 
                 {/* Transactions */}
@@ -327,7 +340,15 @@ export default function LoanDetailsPage() {
             {/* EMI Breakdown Section */}
             {loan.hasEMI && calculated.emiBreakdown && calculated.emiBreakdown.length > 0 && (
               <div className="mt-6 bg-white p-6 rounded-lg shadow">
-                <h3 className="text-xl font-semibold mb-4">EMI Breakdown</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">EMI Breakdown</h3>
+                  <button
+                    onClick={() => setShowEMIPaymentModal(true)}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
+                  >
+                    Pay EMI
+                  </button>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
@@ -340,35 +361,78 @@ export default function LoanDetailsPage() {
                           <th className="border border-gray-300 px-4 py-2 text-right">Process Fee</th>
                         )}
                         <th className="border border-gray-300 px-4 py-2 text-right">EMI Amount</th>
+                        <th className="border border-gray-300 px-4 py-2 text-right">Status</th>
                         <th className="border border-gray-300 px-4 py-2 text-right">Balance</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {calculated.emiBreakdown.map((emi: any) => (
-                        <tr key={emi.period} className={emi.period % 2 === 0 ? 'bg-gray-50' : ''}>
-                          <td className="border border-gray-300 px-4 py-2">{emi.period}</td>
-                          <td className="border border-gray-300 px-4 py-2 text-right">
-                            {formatDateShort(emi.date)}
-                          </td>
-                          <td className="border border-gray-300 px-4 py-2 text-right">
-                            {formatCurrency(emi.principal)}
-                          </td>
-                          <td className="border border-gray-300 px-4 py-2 text-right">
-                            {formatCurrency(emi.interest)}
-                          </td>
-                          {calculated.processFee > 0 && (
-                            <td className="border border-gray-300 px-4 py-2 text-right">
-                              {formatCurrency(emi.processFee)}
-                            </td>
-                          )}
-                          <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
-                            {formatCurrency(emi.emiAmount)}
-                          </td>
-                          <td className="border border-gray-300 px-4 py-2 text-right">
-                            {formatCurrency(emi.balance)}
-                          </td>
-                        </tr>
-                      ))}
+                      {(() => {
+                        // Calculate paid EMIs
+                        const paidAmount = (loan.transactions || [])
+                          .filter((t: any) => t.type === 'PAYMENT')
+                          .reduce((sum: number, t: any) => sum + t.amount, 0);
+                        
+                        const paidEMIs: number[] = [];
+                        let runningTotal = 0;
+                        
+                        calculated.emiBreakdown.forEach((emi: any) => {
+                          runningTotal += emi.emiAmount;
+                          if (runningTotal <= paidAmount) {
+                            paidEMIs.push(emi.period);
+                          }
+                        });
+
+                        return calculated.emiBreakdown.map((emi: any) => {
+                          const isPaid = paidEMIs.includes(emi.period);
+                          const isOverdue = new Date(emi.date) < new Date() && !isPaid;
+                          
+                          return (
+                            <tr
+                              key={emi.period}
+                              className={`${emi.period % 2 === 0 ? 'bg-gray-50' : ''} ${
+                                isPaid ? 'bg-green-50' : isOverdue ? 'bg-red-50' : ''
+                              }`}
+                            >
+                              <td className="border border-gray-300 px-4 py-2">{emi.period}</td>
+                              <td className="border border-gray-300 px-4 py-2 text-right">
+                                {formatDateShort(emi.date)}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-2 text-right">
+                                {formatCurrency(emi.principal)}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-2 text-right">
+                                {formatCurrency(emi.interest)}
+                              </td>
+                              {calculated.processFee > 0 && (
+                                <td className="border border-gray-300 px-4 py-2 text-right">
+                                  {formatCurrency(emi.processFee)}
+                                </td>
+                              )}
+                              <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
+                                {formatCurrency(emi.emiAmount)}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-2 text-right">
+                                {isPaid ? (
+                                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    Paid
+                                  </span>
+                                ) : isOverdue ? (
+                                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                    Overdue
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    Pending
+                                  </span>
+                                )}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-2 text-right">
+                                {formatCurrency(emi.balance)}
+                              </td>
+                            </tr>
+                          );
+                        });
+                      })()}
                       {/* Summary Row */}
                       <tr className="bg-indigo-50 font-semibold">
                         <td colSpan={calculated.processFee > 0 ? 2 : 2} className="border border-gray-300 px-4 py-2">
@@ -393,6 +457,7 @@ export default function LoanDetailsPage() {
                             )
                           )}
                         </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right">-</td>
                         <td className="border border-gray-300 px-4 py-2 text-right">₹0</td>
                       </tr>
                     </tbody>
@@ -402,7 +467,15 @@ export default function LoanDetailsPage() {
             )}
 
             {/* Record Payment Button */}
-            <div className="fixed bottom-8 right-8">
+            <div className="fixed bottom-8 right-8 flex flex-col space-y-2">
+              {loan.hasEMI && (
+                <button
+                  onClick={() => setShowEMIPaymentModal(true)}
+                  className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-green-700"
+                >
+                  Pay EMI ↓
+                </button>
+              )}
               <button
                 onClick={() => setShowPaymentModal(true)}
                 className="bg-indigo-600 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-indigo-700"
@@ -503,6 +576,18 @@ export default function LoanDetailsPage() {
                   </form>
                 </div>
               </div>
+            )}
+
+            {/* EMI Payment Modal */}
+            {loan.hasEMI && calculated.emiBreakdown && (
+              <EMIPaymentModal
+                isOpen={showEMIPaymentModal}
+                onClose={() => setShowEMIPaymentModal(false)}
+                onPay={handleEMIPayment}
+                emiBreakdown={calculated.emiBreakdown}
+                transactions={loan.transactions || []}
+                emiAmount={calculated.emiBreakdown[0]?.emiAmount || 0}
+              />
             )}
           </main>
         </div>
