@@ -17,6 +17,8 @@ export default function CustomerDetailsClient() {
   const [customer, setCustomer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (customerId) {
@@ -43,6 +45,21 @@ export default function CustomerDetailsClient() {
       currency: 'INR',
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const handleDelete = async () => {
+    if (!customerId) return;
+
+    setDeleting(true);
+    try {
+      await personAPI.delete(customerId);
+      router.push('/customer');
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to delete customer');
+      setShowDeleteConfirm(false);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (loading) {
@@ -87,7 +104,6 @@ export default function CustomerDetailsClient() {
 
   const totals = customer.totals || {
     totalLent: 0,
-    totalBorrowed: 0,
     totalLoans: 0,
   };
 
@@ -261,16 +277,44 @@ export default function CustomerDetailsClient() {
                             )}
                           </div>
                         )}
+                        {customer.kycDocuments.signature && (
+                          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-gray-700">Signature</span>
+                              <a
+                                href={`${API_URL}${customer.kycDocuments.signature}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-indigo-600 hover:text-indigo-700 text-xs"
+                              >
+                                View →
+                              </a>
+                            </div>
+                            {customer.kycDocuments.signature.match(/\.(jpg|jpeg|png)$/i) && (
+                              <img
+                                src={`${API_URL}${customer.kycDocuments.signature}`}
+                                alt="Signature"
+                                className="w-full h-32 object-cover rounded mt-2 border border-gray-300"
+                              />
+                            )}
+                          </div>
+                        )}
                       </div>
                       </div>
                     );
                   })()}
 
                   <div className="mt-6 pt-4 border-t border-gray-200">
-                    <button className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 mb-2">
+                    <Link
+                      href={`/customer/${customer.id}/edit`}
+                      className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 mb-2 block text-center"
+                    >
                       Edit Customer
-                    </button>
-                    <button className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                    </Link>
+                    <button
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    >
                       Delete Customer
                     </button>
                   </div>
@@ -280,14 +324,10 @@ export default function CustomerDetailsClient() {
               {/* Center and Right Columns - Summary and Loans */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-white p-6 rounded-lg shadow">
                     <p className="text-sm text-gray-500 mb-2">Total Lent</p>
                     <p className="text-2xl font-bold text-indigo-600">{formatCurrency(totals.totalLent)}</p>
-                  </div>
-                  <div className="bg-white p-6 rounded-lg shadow">
-                    <p className="text-sm text-gray-500 mb-2">Total Borrowed</p>
-                    <p className="text-2xl font-bold text-orange-600">{formatCurrency(totals.totalBorrowed)}</p>
                   </div>
                   <div className="bg-white p-6 rounded-lg shadow">
                     <p className="text-sm text-gray-500 mb-2">Total Loans</p>
@@ -378,6 +418,38 @@ export default function CustomerDetailsClient() {
           </main>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Delete Customer
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete <strong>{customer?.name}</strong>? This action cannot be undone.
+              </p>
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                >
+                  No, Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                >
+                  {deleting ? 'Deleting...' : 'Yes, Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </ProtectedRoute>
   );
 }

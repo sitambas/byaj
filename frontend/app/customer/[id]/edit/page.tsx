@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import Sidebar from '@/components/layout/Sidebar';
@@ -11,15 +11,16 @@ import { personAPI, uploadAPI } from '@/services/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-export default function AddPersonPage() {
+export default function EditCustomerPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const returnUrl = searchParams.get('returnUrl');
+  const params = useParams();
+  const customerId = params.id as string;
   const selectedBook = useSelector((state: RootState) => state.book.selectedBook);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     address: '',
+    accountNo: '',
   });
   const [kycDocuments, setKycDocuments] = useState<{
     aadhaar?: string;
@@ -30,6 +31,7 @@ export default function AddPersonPage() {
   }>({});
   const [uploading, setUploading] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState('');
   
   const fileInputRefs = {
@@ -38,6 +40,45 @@ export default function AddPersonPage() {
     photo: useRef<HTMLInputElement>(null),
     addressProof: useRef<HTMLInputElement>(null),
     signature: useRef<HTMLInputElement>(null),
+  };
+
+  useEffect(() => {
+    if (customerId) {
+      fetchCustomerData();
+    }
+  }, [customerId]);
+
+  const fetchCustomerData = async () => {
+    try {
+      setLoadingData(true);
+      const response = await personAPI.getById(customerId);
+      const customer = response.data.person;
+      
+      setFormData({
+        name: customer.name || '',
+        phone: customer.phone || '',
+        address: customer.address || '',
+        accountNo: customer.accountNo || '',
+      });
+
+      // Parse KYC documents if they exist
+      if (customer.kycDocuments) {
+        try {
+          const parsed = typeof customer.kycDocuments === 'string' 
+            ? JSON.parse(customer.kycDocuments) 
+            : customer.kycDocuments;
+          setKycDocuments(parsed || {});
+        } catch (e) {
+          console.error('Error parsing KYC documents:', e);
+          setKycDocuments({});
+        }
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to load customer data');
+      console.error('Failed to fetch customer:', err);
+    } finally {
+      setLoadingData(false);
+    }
   };
 
   const handleFileUpload = async (file: File, documentType: string) => {
@@ -53,10 +94,7 @@ export default function AddPersonPage() {
         [documentType]: fileUrl,
       }));
       
-      // Clear error if required document is uploaded
-      if (error && (error.includes('Customer Photo') || error.includes('Address Proof'))) {
-        setError('');
-      }
+      setError('');
     } catch (err: any) {
       alert(err.response?.data?.error || 'Failed to upload file');
     } finally {
@@ -88,36 +126,35 @@ export default function AddPersonPage() {
       return;
     }
 
-    // Validate required KYC documents
-    if (!kycDocuments.photo) {
-      setError('Customer Photo is required');
-      return;
-    }
-
-    if (!kycDocuments.addressProof) {
-      setError('Address Proof is required');
-      return;
-    }
-
     setLoading(true);
     try {
-      await personAPI.create({
+      await personAPI.update(customerId, {
         ...formData,
-        bookId: selectedBook.id,
         kycDocuments: Object.keys(kycDocuments).length > 0 ? kycDocuments : null,
       });
-      // Redirect to returnUrl if provided, otherwise go to customer list
-      if (returnUrl) {
-        router.push(returnUrl);
-      } else {
-        router.push('/customer');
-      }
+      router.push(`/customer/${customerId}`);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create customer');
+      setError(err.response?.data?.error || 'Failed to update customer');
     } finally {
       setLoading(false);
     }
   };
+
+  if (loadingData) {
+    return (
+      <ProtectedRoute>
+        <div className="flex min-h-screen bg-gray-50">
+          <Sidebar />
+          <div className="flex-1 flex flex-col">
+            <Header />
+            <main className="flex-1 p-6">
+              <div className="text-center py-12 text-gray-500">Loading customer data...</div>
+            </main>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
@@ -133,17 +170,17 @@ export default function AddPersonPage() {
               >
                 ← Back
               </button>
-              <h1 className="text-3xl font-bold text-gray-900">Add New Customer</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Edit Customer</h1>
               {selectedBook && (
                 <p className="text-sm text-gray-500 mt-1">
-                  Adding to branch: <span className="font-semibold text-indigo-600">{selectedBook.name}</span>
+                  Branch: <span className="font-semibold text-indigo-600">{selectedBook.name}</span>
                 </p>
               )}
             </div>
 
             {!selectedBook && (
               <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg mb-6">
-                Please select a branch from the sidebar before adding a customer.
+                Please select a branch from the sidebar.
               </div>
             )}
 
@@ -197,6 +234,19 @@ export default function AddPersonPage() {
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     rows={4}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="accountNo" className="block text-sm font-medium text-gray-700 mb-2">
+                    Account Number
+                  </label>
+                  <input
+                    id="accountNo"
+                    type="text"
+                    value={formData.accountNo}
+                    onChange={(e) => setFormData({ ...formData, accountNo: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -292,7 +342,7 @@ export default function AddPersonPage() {
                     {/* Photo */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Customer Photo <span className="text-red-500">*</span>
+                        Customer Photo
                       </label>
                       <input
                         ref={fileInputRefs.photo}
@@ -324,22 +374,17 @@ export default function AddPersonPage() {
                           type="button"
                           onClick={() => fileInputRefs.photo.current?.click()}
                           disabled={uploading === 'photo'}
-                          className={`w-full px-4 py-2 border-2 border-dashed rounded-lg hover:border-indigo-500 text-gray-600 hover:text-indigo-600 disabled:opacity-50 ${
-                            error && error.includes('Customer Photo') ? 'border-red-500' : 'border-gray-300'
-                          }`}
+                          className="w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-500 text-gray-600 hover:text-indigo-600 disabled:opacity-50"
                         >
                           {uploading === 'photo' ? 'Uploading...' : '+ Upload Photo'}
                         </button>
-                      )}
-                      {error && error.includes('Customer Photo') && (
-                        <p className="text-red-500 text-xs mt-1">Customer Photo is required</p>
                       )}
                     </div>
 
                     {/* Address Proof */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Address Proof <span className="text-red-500">*</span>
+                        Address Proof
                       </label>
                       <input
                         ref={fileInputRefs.addressProof}
@@ -371,15 +416,10 @@ export default function AddPersonPage() {
                           type="button"
                           onClick={() => fileInputRefs.addressProof.current?.click()}
                           disabled={uploading === 'addressProof'}
-                          className={`w-full px-4 py-2 border-2 border-dashed rounded-lg hover:border-indigo-500 text-gray-600 hover:text-indigo-600 disabled:opacity-50 ${
-                            error && error.includes('Address Proof') ? 'border-red-500' : 'border-gray-300'
-                          }`}
+                          className="w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-500 text-gray-600 hover:text-indigo-600 disabled:opacity-50"
                         >
                           {uploading === 'addressProof' ? 'Uploading...' : '+ Upload Address Proof'}
                         </button>
-                      )}
-                      {error && error.includes('Address Proof') && (
-                        <p className="text-red-500 text-xs mt-1">Address Proof is required</p>
                       )}
                     </div>
 
@@ -427,12 +467,6 @@ export default function AddPersonPage() {
                   </div>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg">
-                  <p className="text-sm">
-                    <strong>Note:</strong> Account number will be automatically generated as a 10-digit number when you create the customer.
-                  </p>
-                </div>
-
                 <div className="flex space-x-4">
                   <button
                     type="button"
@@ -446,7 +480,7 @@ export default function AddPersonPage() {
                     disabled={loading}
                     className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                   >
-                    {loading ? 'Creating...' : 'Create Customer'}
+                    {loading ? 'Updating...' : 'Update Customer'}
                   </button>
                 </div>
               </form>

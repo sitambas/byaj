@@ -12,12 +12,38 @@ export const getAllLoans = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    // Get user's accessible branch IDs (owned books + assigned branches)
+    const branchAccess = await prisma.userBranchAccess.findMany({
+      where: { userId },
+      select: { bookId: true },
+    });
+    const assignedBranchIds = branchAccess.map(access => access.bookId);
+
+    const ownedBooks = await prisma.book.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const ownedBookIds = ownedBooks.map(book => book.id);
+
+    const accessibleBookIds = [...new Set([...ownedBookIds, ...assignedBranchIds])];
+
+    // If user has no access, return empty array
+    if (accessibleBookIds.length === 0) {
+      return res.json({ loans: [] });
+    }
+
     const where: any = {
-      book: { userId },
+      bookId: { in: accessibleBookIds },
     };
 
+    // If specific bookId is requested, verify it's in accessible branches
     if (bookId) {
-      where.bookId = bookId as string;
+      const requestedBookId = bookId as string;
+      if (accessibleBookIds.includes(requestedBookId)) {
+        where.bookId = requestedBookId;
+      } else {
+        return res.status(403).json({ error: 'Access denied to this branch' });
+      }
     }
 
     if (status) {
@@ -222,10 +248,34 @@ export const createLoan = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Verify book belongs to user
-    const book = await prisma.book.findFirst({
-      where: { id: bookId, userId },
+    // Check if user is staff
+    const staff = await prisma.staff.findUnique({
+      where: { userId },
+      select: { id: true },
     });
+
+    // Verify book access - owners can access their own books, staff can access assigned branches
+    let book = null;
+    if (staff) {
+      // Staff: Check if they have access to this branch
+      const branchAccess = await prisma.userBranchAccess.findFirst({
+        where: {
+          userId,
+          bookId,
+        },
+        include: {
+          book: true,
+        },
+      });
+      if (branchAccess) {
+        book = branchAccess.book;
+      }
+    } else {
+      // Owner: Check if they own the book
+      book = await prisma.book.findFirst({
+        where: { id: bookId, userId },
+      });
+    }
 
     if (!book) {
       return res.status(404).json({ error: 'Book not found' });

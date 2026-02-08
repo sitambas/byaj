@@ -104,32 +104,6 @@ export default function LoanTypeStep({ formData, setFormData }: Props) {
         )}
       </div>
 
-      {/* Account Type */}
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Account Type</h3>
-        <div className="flex space-x-4">
-          <button
-            onClick={() => setFormData({ ...formData, accountType: 'LENT' })}
-            className={`px-6 py-3 rounded-lg ${
-              formData.accountType === 'LENT'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-200 text-gray-700'
-            }`}
-          >
-            Lend Money
-          </button>
-          <button
-            onClick={() => setFormData({ ...formData, accountType: 'BORROWED' })}
-            className={`px-6 py-3 rounded-lg ${
-              formData.accountType === 'BORROWED'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-200 text-gray-700'
-            }`}
-          >
-            Borrow Money
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

@@ -13,7 +13,6 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState({
     totalOutstanding: 0,
     totalLent: 0,
-    totalBorrowed: 0,
     peopleOwe: 0,
     youOwe: 0,
   });
@@ -72,7 +71,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-white p-6 rounded-lg shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -97,20 +96,6 @@ export default function DashboardPage() {
                 </div>
                 <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
                   💵
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">TOTAL BORROWED</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {loading ? '...' : formatCurrency(summary.totalBorrowed)}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
-                  📄
                 </div>
               </div>
             </div>

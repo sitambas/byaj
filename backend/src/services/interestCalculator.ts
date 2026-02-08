@@ -147,4 +147,3 @@ export class InterestCalculator {
     return totalMonths;
   }
 }
-

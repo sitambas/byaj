@@ -250,10 +250,34 @@ export const createPerson = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Book ID is required' });
     }
 
-    // Verify book belongs to user
-    const book = await prisma.book.findFirst({
-      where: { id: bookId, userId },
+    // Check if user is staff
+    const staff = await prisma.staff.findUnique({
+      where: { userId },
+      select: { id: true },
     });
+
+    // Verify book access - owners can access their own books, staff can access assigned branches
+    let book = null;
+    if (staff) {
+      // Staff: Check if they have access to this branch
+      const branchAccess = await prisma.userBranchAccess.findFirst({
+        where: {
+          userId,
+          bookId,
+        },
+        include: {
+          book: true,
+        },
+      });
+      if (branchAccess) {
+        book = branchAccess.book;
+      }
+    } else {
+      // Owner: Check if they own the book
+      book = await prisma.book.findFirst({
+        where: { id: bookId, userId },
+      });
+    }
 
     if (!book) {
       return res.status(404).json({ error: 'Book not found' });
@@ -297,7 +321,7 @@ export const updatePerson = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const { name, phone, address, accountNo } = req.body;
+    const { name, phone, address, accountNo, kycDocuments } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -307,16 +331,56 @@ export const updatePerson = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Person ID is required' });
     }
 
-    // Verify person belongs to user's book
-    const existingPerson = await prisma.person.findFirst({
-      where: {
-        id,
-        book: { userId },
-      },
+    // Check if user is staff
+    const staff = await prisma.staff.findUnique({
+      where: { userId },
+      select: { id: true },
     });
+
+    // Verify person access - owners can access their own books, staff can access assigned branches
+    let existingPerson = null;
+    if (staff) {
+      // Staff: Check if they have access to the person's branch
+      const person = await prisma.person.findUnique({
+        where: { id },
+        include: { book: true },
+      });
+      
+      if (person) {
+        const branchAccess = await prisma.userBranchAccess.findFirst({
+          where: {
+            userId,
+            bookId: person.bookId,
+          },
+        });
+        if (branchAccess) {
+          existingPerson = person;
+        }
+      }
+    } else {
+      // Owner: Check if they own the book
+      existingPerson = await prisma.person.findFirst({
+        where: {
+          id,
+          book: { userId },
+        },
+      });
+    }
 
     if (!existingPerson) {
       return res.status(404).json({ error: 'Person not found' });
+    }
+
+    // Handle KYC documents - can be JSON string or object
+    let kycDocs = existingPerson.kycDocuments;
+    if (kycDocuments !== undefined) {
+      if (kycDocuments === null) {
+        kycDocs = null;
+      } else if (typeof kycDocuments === 'string') {
+        kycDocs = kycDocuments;
+      } else {
+        kycDocs = JSON.stringify(kycDocuments);
+      }
     }
 
     const person = await prisma.person.update({
@@ -326,6 +390,7 @@ export const updatePerson = async (req: AuthRequest, res: Response) => {
         phone: phone?.trim(),
         address: address?.trim() || null,
         accountNo: accountNo?.trim() || null,
+        kycDocuments: kycDocs,
       },
     });
 
@@ -349,13 +414,41 @@ export const deletePerson = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Person ID is required' });
     }
 
-    // Verify person belongs to user's book
-    const existingPerson = await prisma.person.findFirst({
-      where: {
-        id,
-        book: { userId },
-      },
+    // Check if user is staff
+    const staff = await prisma.staff.findUnique({
+      where: { userId },
+      select: { id: true },
     });
+
+    // Verify person access - owners can access their own books, staff can access assigned branches
+    let existingPerson = null;
+    if (staff) {
+      // Staff: Check if they have access to the person's branch
+      const person = await prisma.person.findUnique({
+        where: { id },
+        include: { book: true },
+      });
+      
+      if (person) {
+        const branchAccess = await prisma.userBranchAccess.findFirst({
+          where: {
+            userId,
+            bookId: person.bookId,
+          },
+        });
+        if (branchAccess) {
+          existingPerson = person;
+        }
+      }
+    } else {
+      // Owner: Check if they own the book
+      existingPerson = await prisma.person.findFirst({
+        where: {
+          id,
+          book: { userId },
+        },
+      });
+    }
 
     if (!existingPerson) {
       return res.status(404).json({ error: 'Person not found' });
