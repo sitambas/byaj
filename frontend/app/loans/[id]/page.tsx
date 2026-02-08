@@ -69,6 +69,14 @@ export default function LoanDetailsPage() {
     });
   };
 
+  const formatDateShort = (date: string | Date) => {
+    return new Date(date).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
   if (loading) {
     return (
       <ProtectedRoute>
@@ -256,6 +264,12 @@ export default function LoanDetailsPage() {
                       <span className="text-gray-600">Interest:</span>
                       <span className="font-medium">{formatCurrency(calculated.interest || 0)}</span>
                     </div>
+                    {calculated.processFee && calculated.processFee > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Process Fee:</span>
+                        <span className="font-medium">{formatCurrency(calculated.processFee)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between border-t pt-2">
                       <span className="text-gray-900 font-semibold">Total:</span>
                       <span className="font-bold text-gray-900">
@@ -309,6 +323,83 @@ export default function LoanDetailsPage() {
                 </div>
               </div>
             </div>
+
+            {/* EMI Breakdown Section */}
+            {loan.hasEMI && calculated.emiBreakdown && calculated.emiBreakdown.length > 0 && (
+              <div className="mt-6 bg-white p-6 rounded-lg shadow">
+                <h3 className="text-xl font-semibold mb-4">EMI Breakdown</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="border border-gray-300 px-4 py-2 text-left">Period</th>
+                        <th className="border border-gray-300 px-4 py-2 text-right">Date</th>
+                        <th className="border border-gray-300 px-4 py-2 text-right">Principal</th>
+                        <th className="border border-gray-300 px-4 py-2 text-right">Interest</th>
+                        {calculated.processFee > 0 && (
+                          <th className="border border-gray-300 px-4 py-2 text-right">Process Fee</th>
+                        )}
+                        <th className="border border-gray-300 px-4 py-2 text-right">EMI Amount</th>
+                        <th className="border border-gray-300 px-4 py-2 text-right">Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {calculated.emiBreakdown.map((emi: any) => (
+                        <tr key={emi.period} className={emi.period % 2 === 0 ? 'bg-gray-50' : ''}>
+                          <td className="border border-gray-300 px-4 py-2">{emi.period}</td>
+                          <td className="border border-gray-300 px-4 py-2 text-right">
+                            {formatDateShort(emi.date)}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-right">
+                            {formatCurrency(emi.principal)}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-right">
+                            {formatCurrency(emi.interest)}
+                          </td>
+                          {calculated.processFee > 0 && (
+                            <td className="border border-gray-300 px-4 py-2 text-right">
+                              {formatCurrency(emi.processFee)}
+                            </td>
+                          )}
+                          <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
+                            {formatCurrency(emi.emiAmount)}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-right">
+                            {formatCurrency(emi.balance)}
+                          </td>
+                        </tr>
+                      ))}
+                      {/* Summary Row */}
+                      <tr className="bg-indigo-50 font-semibold">
+                        <td colSpan={calculated.processFee > 0 ? 2 : 2} className="border border-gray-300 px-4 py-2">
+                          Total
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right">
+                          {formatCurrency(loan.principalAmount)}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right">
+                          {formatCurrency(calculated.interest || 0)}
+                        </td>
+                        {calculated.processFee > 0 && (
+                          <td className="border border-gray-300 px-4 py-2 text-right">
+                            {formatCurrency(calculated.processFee)}
+                          </td>
+                        )}
+                        <td className="border border-gray-300 px-4 py-2 text-right">
+                          {formatCurrency(
+                            calculated.emiBreakdown.reduce(
+                              (sum: number, emi: any) => sum + emi.emiAmount,
+                              0
+                            )
+                          )}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right">₹0</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {/* Record Payment Button */}
             <div className="fixed bottom-8 right-8">

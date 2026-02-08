@@ -68,6 +68,7 @@ import staffRoutes from './routes/staffRoutes';
 import roleRoutes from './routes/roleRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 import userBranchRoutes from './routes/userBranchRoutes';
+import reportRoutes from './routes/reportRoutes';
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -79,6 +80,7 @@ app.use('/api/staff', staffRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/user-branches', userBranchRoutes);
+app.use('/api/reports', reportRoutes);
 
 // 404 handler
 app.use((req, res) => {

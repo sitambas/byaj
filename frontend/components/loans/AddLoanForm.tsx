@@ -72,6 +72,7 @@ export default function AddLoanForm() {
       const principal = parseFloat(formData.principalAmount);
       const yearlyRate = parseFloat(formData.interestRate);
       const tenure = parseFloat(formData.tenure);
+      const processFee = parseFloat(formData.processFee) || 0;
       
       if (!isNaN(principal) && !isNaN(yearlyRate) && !isNaN(tenure) && principal > 0 && tenure > 0) {
         let interest = 0;
@@ -99,7 +100,8 @@ export default function AddLoanForm() {
             interest = principal * (yearlyRate / 100) * (tenure / 12);
         }
         
-        const totalAmount = principal + interest;
+        // Total Amount = Principal + Interest + Process Fee
+        const totalAmount = principal + interest + processFee;
         const emiAmount = tenure > 0 ? totalAmount / tenure : 0;
         
         setFormData(prev => ({ 
@@ -124,7 +126,7 @@ export default function AddLoanForm() {
         emiAmount: ''
       }));
     }
-  }, [formData.principalAmount, formData.interestRate, formData.tenure, formData.interestCalc]);
+  }, [formData.principalAmount, formData.interestRate, formData.tenure, formData.interestCalc, formData.processFee]);
 
   // Calculate End Date based on Tenure and Interest Calculation
   useEffect(() => {
@@ -451,7 +453,7 @@ export default function AddLoanForm() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Total Amount (Principal + Interest)
+                  Total Amount (Principal + Interest + Process Fee)
                 </label>
                 <input
                   type="text"
@@ -471,7 +473,7 @@ export default function AddLoanForm() {
                   readOnly
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  EMI = (Principal + Interest) / {formData.tenure || 0} periods
+                  EMI = (Principal + Interest + Process Fee) / {formData.tenure || 0} periods
                 </p>
               </div>
            
@@ -490,6 +492,7 @@ export default function AddLoanForm() {
                   <th className="border border-gray-300 px-4 py-2 text-right">Date</th>
                   <th className="border border-gray-300 px-4 py-2 text-right">Principal</th>
                   <th className="border border-gray-300 px-4 py-2 text-right">Interest</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right">Process Fee</th>
                   <th className="border border-gray-300 px-4 py-2 text-right">EMI Amount</th>
                   <th className="border border-gray-300 px-4 py-2 text-right">Balance</th>
                 </tr>
@@ -498,13 +501,16 @@ export default function AddLoanForm() {
                 {(() => {
                   const principal = parseFloat(formData.principalAmount);
                   const interest = parseFloat(formData.calculatedInterest);
+                  const processFee = parseFloat(formData.processFee) || 0;
                   const tenure = parseInt(formData.tenure);
                   const emiAmount = parseFloat(formData.emiAmount);
                   const principalPerPeriod = principal / tenure;
                   const interestPerPeriod = interest / tenure;
+                  const processFeePerPeriod = processFee / tenure;
                   const startDate = new Date(formData.startDate);
                   const rows = [];
-                  let balance = principal + interest;
+                  // Balance includes Principal + Interest + Process Fee
+                  let balance = principal + interest + processFee;
 
                   for (let i = 1; i <= tenure; i++) {
                     const periodDate = new Date(startDate);
@@ -540,6 +546,9 @@ export default function AddLoanForm() {
                         <td className="border border-gray-300 px-4 py-2 text-right">
                           ₹{interestPerPeriod.toFixed(2)}
                         </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right">
+                          ₹{processFeePerPeriod.toFixed(2)}
+                        </td>
                         <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
                           ₹{emiAmount.toFixed(2)}
                         </td>
@@ -559,6 +568,9 @@ export default function AddLoanForm() {
                       </td>
                       <td className="border border-gray-300 px-4 py-2 text-right">
                         ₹{interest.toFixed(2)}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-right">
+                        ₹{processFee.toFixed(2)}
                       </td>
                       <td className="border border-gray-300 px-4 py-2 text-right">
                         ₹{(emiAmount * tenure).toFixed(2)}

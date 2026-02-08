@@ -14,7 +14,6 @@ export default function DashboardPage() {
     totalOutstanding: 0,
     totalLent: 0,
     peopleOwe: 0,
-    youOwe: 0,
   });
   const [chartData, setChartData] = useState({ totalLent: 0, interest: 0 });
   const [loading, setLoading] = useState(true);
@@ -71,7 +70,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             <div className="bg-white p-6 rounded-lg shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -110,20 +109,6 @@ export default function DashboardPage() {
                 </div>
                 <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
                   👥
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">YOU OWE</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {loading ? '...' : formatCurrency(summary.youOwe)}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
-                  ⚠️
                 </div>
               </div>
             </div>

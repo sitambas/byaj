@@ -181,7 +181,8 @@ export const getLoanById = async (req: AuthRequest, res: Response) => {
       loan.hasCompounding
     );
 
-    const total = loan.principalAmount + topup + interest;
+    const processFee = loan.processFee || 0;
+    const total = loan.principalAmount + topup + interest + processFee;
     const amountLeft = total - recovered;
 
     // Calculate time duration
@@ -193,11 +194,57 @@ export const getLoanById = async (req: AuthRequest, res: Response) => {
     const months = Math.floor((days % 365) / 30);
     const remainingDays = days % 30;
 
+    // Generate EMI breakdown if loan has EMI
+    let emiBreakdown: any[] = [];
+    if (loan.hasEMI && loan.numberOfEMI) {
+      const emiTotal = loan.principalAmount + interest + processFee;
+      const emiAmount = loan.numberOfEMI > 0 ? emiTotal / loan.numberOfEMI : 0;
+      const principalPerPeriod = loan.principalAmount / loan.numberOfEMI;
+      const interestPerPeriod = interest / loan.numberOfEMI;
+      const processFeePerPeriod = processFee / loan.numberOfEMI;
+      
+      let balance = emiTotal;
+
+      for (let i = 1; i <= loan.numberOfEMI; i++) {
+        const periodDate = new Date(loan.startDate);
+        
+        // Calculate date based on interest calculation frequency
+        switch (loan.interestCalc) {
+          case 'MONTHLY':
+            periodDate.setMonth(periodDate.getMonth() + i);
+            break;
+          case 'HALF_MONTHLY':
+            periodDate.setDate(periodDate.getDate() + (i * 15));
+            break;
+          case 'WEEKLY':
+            periodDate.setDate(periodDate.getDate() + (i * 7));
+            break;
+          case 'DAILY':
+            periodDate.setDate(periodDate.getDate() + i);
+            break;
+        }
+
+        balance -= emiAmount;
+        const isLastRow = i === loan.numberOfEMI;
+
+        emiBreakdown.push({
+          period: i,
+          date: periodDate.toISOString(),
+          principal: principalPerPeriod,
+          interest: interestPerPeriod,
+          processFee: processFeePerPeriod,
+          emiAmount: emiAmount,
+          balance: isLastRow ? 0 : Math.max(0, balance),
+        });
+      }
+    }
+
     res.json({
       loan: {
         ...loan,
         calculated: {
           interest,
+          processFee,
           total,
           topup,
           amountRecovered: recovered,
@@ -207,6 +254,7 @@ export const getLoanById = async (req: AuthRequest, res: Response) => {
             months,
             days: remainingDays,
           },
+          emiBreakdown,
         },
       },
     });
@@ -305,7 +353,7 @@ export const createLoan = async (req: AuthRequest, res: Response) => {
         billNumber: finalBillNumber,
         personId,
         bookId,
-        accountType: accountType || 'LENT',
+        accountType: 'LENT',
         loanType: loanType || 'WITH_INTEREST',
         interestCalc: interestCalc || 'MONTHLY',
         principalAmount: parseFloat(principalAmount),

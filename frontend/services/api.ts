@@ -96,10 +96,10 @@ export const transactionAPI = {
 };
 
 export const reportAPI = {
-  interest: (borrowerId?: string) => api.get('/api/reports/interest', { params: { borrowerId } }),
+  interest: (borrowerId?: string, bookId?: string) => api.get('/api/reports/interest', { params: { borrowerId, bookId } }),
   transaction: (filters?: any) => api.get('/api/reports/transaction', { params: filters }),
-  partyStatement: (personId: string) => api.get('/api/reports/party-statement', { params: { personId } }),
-  accountSummary: () => api.get('/api/reports/account-summary'),
+  partyStatement: (personId: string, bookId?: string) => api.get('/api/reports/party-statement', { params: { personId, bookId } }),
+  accountSummary: (bookId?: string) => api.get('/api/reports/account-summary', { params: { bookId } }),
 };
 
 export const dashboardAPI = {

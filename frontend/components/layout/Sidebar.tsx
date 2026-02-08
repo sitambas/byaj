@@ -25,7 +25,6 @@ const menuItems: MenuItem[] = [
   { name: 'Transactions', path: '/transactions', icon: '📊' },
   { name: 'Reports', path: '/reports', icon: '📄' },
   { name: 'Interest Calculator', path: '/calculator', icon: '🧮' },
-  { name: 'Deposits', path: '/deposits', icon: '🏦' },
   { name: 'My Staff', path: '/staff', icon: '👨‍💼', requiresAdmin: true },
 ];
 

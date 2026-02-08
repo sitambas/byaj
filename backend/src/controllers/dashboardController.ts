@@ -15,6 +15,7 @@ export const getSummary = async (req: AuthRequest, res: Response) => {
     const where: any = {
       book: { userId },
       status: { not: 'DELETED' },
+      accountType: 'LENT',
     };
 
     if (bookId) {
@@ -33,10 +34,8 @@ export const getSummary = async (req: AuthRequest, res: Response) => {
 
     // Calculate totals
     let totalLent = 0;
-    let totalBorrowed = 0;
     let totalOutstanding = 0;
     let peopleOwe = 0;
-    let youOwe = 0;
     let totalInterest = 0;
 
     loans.forEach((loan) => {
@@ -62,22 +61,15 @@ export const getSummary = async (req: AuthRequest, res: Response) => {
       const total = principal + interest;
       const outstanding = total - recovered;
 
-      if (loan.accountType === 'LENT') {
-        totalLent += principal;
-        totalOutstanding += outstanding;
-        peopleOwe += outstanding;
-      } else {
-        totalBorrowed += principal;
-        youOwe += outstanding;
-      }
+      totalLent += principal;
+      totalOutstanding += outstanding;
+      peopleOwe += outstanding;
     });
 
     res.json({
       totalOutstanding,
       totalLent,
-      totalBorrowed,
       peopleOwe,
-      youOwe,
       totalInterest,
     });
   } catch (error: any) {
@@ -98,6 +90,7 @@ export const getCharts = async (req: AuthRequest, res: Response) => {
     const where: any = {
       book: { userId },
       status: { not: 'DELETED' },
+      accountType: 'LENT',
     };
 
     if (bookId) {
@@ -112,21 +105,19 @@ export const getCharts = async (req: AuthRequest, res: Response) => {
     let totalInterest = 0;
 
     loans.forEach((loan) => {
-      if (loan.accountType === 'LENT') {
-        totalLent += loan.principalAmount;
-        
-        // Calculate interest
-        const days = loan.endDate
-          ? Math.ceil((new Date(loan.endDate).getTime() - new Date(loan.startDate).getTime()) / (1000 * 60 * 60 * 24))
-          : 0;
-        
-        if (loan.loanType === 'WITH_INTEREST') {
-          if (loan.interestCalc === 'MONTHLY') {
-            const months = Math.ceil(days / 30);
-            totalInterest += (loan.principalAmount * loan.interestRate * months) / 100;
-          } else {
-            totalInterest += (loan.principalAmount * loan.interestRate * days) / (100 * 365);
-          }
+      totalLent += loan.principalAmount;
+      
+      // Calculate interest
+      const days = loan.endDate
+        ? Math.ceil((new Date(loan.endDate).getTime() - new Date(loan.startDate).getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+      
+      if (loan.loanType === 'WITH_INTEREST') {
+        if (loan.interestCalc === 'MONTHLY') {
+          const months = Math.ceil(days / 30);
+          totalInterest += (loan.principalAmount * loan.interestRate * months) / 100;
+        } else {
+          totalInterest += (loan.principalAmount * loan.interestRate * days) / (100 * 365);
         }
       }
     });
@@ -153,6 +144,7 @@ export const getDueLoans = async (req: AuthRequest, res: Response) => {
     const where: any = {
       book: { userId },
       status: { not: 'DELETED' },
+      accountType: 'LENT',
     };
 
     if (bookId) {
@@ -208,7 +200,8 @@ export const getDueLoans = async (req: AuthRequest, res: Response) => {
         }
       }
       
-      const total = loan.principalAmount + interest;
+      const processFee = loan.processFee || 0;
+      const total = loan.principalAmount + interest + processFee;
       const outstanding = total - recovered;
 
       return {
@@ -217,6 +210,7 @@ export const getDueLoans = async (req: AuthRequest, res: Response) => {
         person: loan.person,
         principalAmount: loan.principalAmount,
         interest,
+        processFee,
         total,
         outstanding,
         startDate: loan.startDate,

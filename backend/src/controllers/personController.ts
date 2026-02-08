@@ -190,13 +190,10 @@ export const getPersonById = async (req: AuthRequest, res: Response) => {
 
     // Calculate totals
     let totalLent = 0;
-    let totalBorrowed = 0;
 
     person.loans.forEach((loan: any) => {
       if (loan.accountType === 'LENT') {
         totalLent += loan.principalAmount;
-      } else {
-        totalBorrowed += loan.principalAmount;
       }
     });
 
@@ -219,7 +216,6 @@ export const getPersonById = async (req: AuthRequest, res: Response) => {
         kycDocuments: parsedKycDocuments,
         totals: {
           totalLent,
-          totalBorrowed,
           totalLoans: person.loans.length,
         },
       },
