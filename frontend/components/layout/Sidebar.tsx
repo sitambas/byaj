@@ -33,17 +33,21 @@ export default function Sidebar() {
   const pathname = usePathname();
   const dispatch = useDispatch();
   const books = useSelector((state: RootState) => state.book.books);
+  const userBranches = useSelector((state: RootState) => state.book.userBranches);
   const selectedBook = useSelector((state: RootState) => state.book.selectedBook);
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
   const [hasAdminAccess, setHasAdminAccess] = useState<boolean | null>(null);
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
 
+  // Use userBranches if available, otherwise fall back to books
+  const availableBranches = userBranches.length > 0 ? userBranches : books;
+
   useEffect(() => {
-    // Auto-select first book if available and none selected
-    if (books.length > 0 && !selectedBook) {
-      dispatch(setSelectedBook(books[0]));
+    // Auto-select first branch if available and none selected
+    if (availableBranches.length > 0 && !selectedBook) {
+      dispatch(setSelectedBook(availableBranches[0]));
     }
-  }, [books, selectedBook, dispatch]);
+  }, [availableBranches, selectedBook, dispatch]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -99,26 +103,41 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto pt-8 border-t border-indigo-700">
-        <div className="px-4 py-2">
-          <p className="text-sm text-indigo-300 mb-2">CURRENT CONTEXT</p>
-          <select
-            value={selectedBook?.id || ''}
-            onChange={(e) => {
-              const book = books.find((b) => b.id === e.target.value);
-              dispatch(setSelectedBook(book || null));
-            }}
-            className="w-full bg-indigo-800 text-white rounded px-3 py-2 text-sm"
-          >
-            <option value="">Select Book/Staff</option>
-            {books.map((book) => (
-              <option key={book.id} value={book.id}>
-                {book.name}
-              </option>
-            ))}
-          </select>
+      {/* Show branch selector only if user has multiple branches */}
+      {availableBranches.length > 1 && (
+        <div className="mt-auto pt-8 border-t border-indigo-700">
+          <div className="px-4 py-2">
+            <p className="text-sm text-indigo-300 mb-2">SELECT BRANCH</p>
+            <select
+              value={selectedBook?.id || ''}
+              onChange={(e) => {
+                const branch = availableBranches.find((b) => b.id === e.target.value);
+                dispatch(setSelectedBook(branch || null));
+              }}
+              className="w-full bg-indigo-800 text-white rounded px-3 py-2 text-sm"
+            >
+              <option value="">Select Branch</option>
+              {availableBranches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-      </div>
+      )}
+      
+      {/* Show current branch if only one branch */}
+      {availableBranches.length === 1 && selectedBook && (
+        <div className="mt-auto pt-8 border-t border-indigo-700">
+          <div className="px-4 py-2">
+            <p className="text-sm text-indigo-300 mb-2">CURRENT BRANCH</p>
+            <div className="w-full bg-indigo-800 text-white rounded px-3 py-2 text-sm">
+              {selectedBook.name}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

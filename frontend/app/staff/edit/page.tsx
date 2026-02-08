@@ -6,7 +6,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import AdminRoute from '@/components/auth/AdminRoute';
-import { staffAPI, roleAPI } from '@/services/api';
+import { staffAPI, roleAPI, bookAPI } from '@/services/api';
 import Link from 'next/link';
 
 interface Role {
@@ -32,6 +32,7 @@ export default function EditStaffPage() {
   const [error, setError] = useState('');
   const [roles, setRoles] = useState<Role[]>([]);
   const [modules, setModules] = useState<Module[]>([]);
+  const [branches, setBranches] = useState<Array<{ id: string; name: string }>>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
@@ -39,10 +40,12 @@ export default function EditStaffPage() {
     roleId: '',
     roleName: 'STAFF',
     permissions: [] as string[],
+    branchIds: [] as string[],
   });
 
   useEffect(() => {
     fetchRolesAndModules();
+    fetchBranches();
     if (staffId) {
       fetchStaff();
     } else {
@@ -66,6 +69,15 @@ export default function EditStaffPage() {
     }
   };
 
+  const fetchBranches = async () => {
+    try {
+      const response = await bookAPI.getAll();
+      setBranches(response.data.books || []);
+    } catch (err: any) {
+      console.error('Failed to fetch branches:', err);
+    }
+  };
+
   const fetchStaff = async () => {
     if (!staffId) return;
     
@@ -76,6 +88,7 @@ export default function EditStaffPage() {
       
       const roleType = staff.roleId ? 'custom' : 'system';
       const permissions = staff.permissions || staff.role?.permissions || [];
+      const assignedBranches = staff.assignedBranches || [];
       
       setFormData({
         name: staff.name || '',
@@ -83,6 +96,7 @@ export default function EditStaffPage() {
         roleId: staff.roleId || '',
         roleName: staff.roleName || 'STAFF',
         permissions: Array.isArray(permissions) ? permissions : [],
+        branchIds: assignedBranches.map((b: any) => b.id),
       });
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to load staff member');
@@ -111,6 +125,15 @@ export default function EditStaffPage() {
     }
   };
 
+  const handleBranchToggle = (branchId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      branchIds: prev.branchIds.includes(branchId)
+        ? prev.branchIds.filter((id) => id !== branchId)
+        : [...prev.branchIds, branchId],
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!staffId) return;
@@ -131,6 +154,9 @@ export default function EditStaffPage() {
         payload.roleId = null; // Clear custom role
         payload.permissions = formData.permissions.length > 0 ? formData.permissions : null;
       }
+
+      // Add branch assignments
+      payload.branchIds = formData.branchIds;
 
       await staffAPI.update(staffId, payload);
       router.push('/staff');
@@ -314,6 +340,38 @@ export default function EditStaffPage() {
                     </p>
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Branch Access <span className="text-red-500">*</span>
+                    </label>
+                    <p className="text-sm text-gray-500 mb-3">
+                      Select which branches this staff member can access. They will only see the selected branches when they log in.
+                    </p>
+                    <div className="border border-gray-300 rounded-lg p-4 space-y-3 max-h-64 overflow-y-auto">
+                      {branches.length === 0 ? (
+                        <p className="text-sm text-gray-500">No branches available.</p>
+                      ) : (
+                        branches.map((branch) => (
+                          <label key={branch.id} className="flex items-start space-x-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData.branchIds.includes(branch.id)}
+                              onChange={() => handleBranchToggle(branch.id)}
+                              disabled={saving}
+                              className="mt-1 w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                            />
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-gray-900">{branch.name}</div>
+                            </div>
+                          </label>
+                        ))
+                      )}
+                    </div>
+                    {formData.branchIds.length === 0 && (
+                      <p className="mt-2 text-sm text-red-500">Please select at least one branch</p>
+                    )}
+                  </div>
+
                   <div className="flex space-x-4">
                     <button
                       type="button"
@@ -325,7 +383,7 @@ export default function EditStaffPage() {
                     </button>
                     <button
                       type="submit"
-                      disabled={saving}
+                      disabled={saving || formData.branchIds.length === 0}
                       className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {saving ? 'Saving...' : 'Save Changes'}

@@ -11,12 +11,50 @@ export const getAllPeople = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    // Check if user is staff
+    const staff = await prisma.staff.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    // Get accessible branch IDs
+    let accessibleBranchIds: string[] = [];
+
+    if (staff) {
+      // Staff: Get assigned branches
+      const branchAccess = await prisma.userBranchAccess.findMany({
+        where: { userId },
+        select: { bookId: true },
+      });
+      accessibleBranchIds = branchAccess.map(access => access.bookId);
+    } else {
+      // Owner: Get owned books
+      const ownedBooks = await prisma.book.findMany({
+        where: { userId },
+        select: { id: true },
+      });
+      accessibleBranchIds = ownedBooks.map(book => book.id);
+    }
+
+    // If user has no branch access, return empty array
+    if (accessibleBranchIds.length === 0) {
+      return res.json({ people: [] });
+    }
+
+    // Build where clause
     const where: any = {
-      book: { userId },
+      bookId: { in: accessibleBranchIds },
     };
 
+    // If specific bookId is requested, verify it's in accessible branches
     if (bookId) {
-      where.bookId = bookId as string;
+      const requestedBookId = bookId as string;
+      if (accessibleBranchIds.includes(requestedBookId)) {
+        where.bookId = requestedBookId;
+      } else {
+        // Staff doesn't have access to this branch
+        return res.status(403).json({ error: 'Access denied to this branch' });
+      }
     }
 
     if (search) {
@@ -111,9 +149,23 @@ export const getPersonById = async (req: AuthRequest, res: Response) => {
       }
     });
 
+    // Parse kycDocuments if it exists
+    let parsedKycDocuments = null;
+    if (person.kycDocuments) {
+      try {
+        parsedKycDocuments = typeof person.kycDocuments === 'string' 
+          ? JSON.parse(person.kycDocuments) 
+          : person.kycDocuments;
+      } catch (e) {
+        console.error('Error parsing kycDocuments:', e);
+        parsedKycDocuments = null;
+      }
+    }
+
     res.json({
       person: {
         ...person,
+        kycDocuments: parsedKycDocuments,
         totals: {
           totalLent,
           totalBorrowed,

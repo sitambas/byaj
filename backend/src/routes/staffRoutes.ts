@@ -7,6 +7,7 @@ import {
   deleteStaff,
   getMyStaffInfo,
 } from '../controllers/staffController';
+import { assignBranchesToStaff, getStaffBranches } from '../controllers/staffBranchController';
 import { authenticate } from '../middleware/auth';
 import { requireOwnerOrAdmin } from '../middleware/permissions';
 
@@ -29,6 +30,10 @@ router.put('/:id', authenticate, requireOwnerOrAdmin, updateStaff);
 
 // Delete staff (owner/admin only)
 router.delete('/:id', authenticate, requireOwnerOrAdmin, deleteStaff);
+
+// Staff branch assignment routes
+router.post('/:staffUserId/branches', authenticate, requireOwnerOrAdmin, assignBranchesToStaff);
+router.get('/:staffUserId/branches', authenticate, getStaffBranches);
 
 export default router;
 

@@ -8,6 +8,8 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { personAPI } from '@/services/api';
 import Link from 'next/link';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
 export default function CustomerDetailsClient() {
   const params = useParams();
   const router = useRouter();
@@ -151,6 +153,118 @@ export default function CustomerDetailsClient() {
                       </span>
                     </div>
                   </div>
+
+                  {/* KYC Documents Section */}
+                  {(() => {
+                    const hasKycDocs = customer.kycDocuments && 
+                                      typeof customer.kycDocuments === 'object' && 
+                                      Object.keys(customer.kycDocuments).length > 0;
+                    
+                    if (!hasKycDocs) {
+                      return (
+                        <div className="mt-6 pt-4 border-t border-gray-200">
+                          <h3 className="text-sm font-semibold text-gray-700 mb-3">KYC Documents</h3>
+                          <p className="text-sm text-gray-500">No KYC documents uploaded</p>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div className="mt-6 pt-4 border-t border-gray-200">
+                        <h3 className="text-sm font-semibold text-gray-700 mb-3">KYC Documents</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {customer.kycDocuments.aadhaar && (
+                          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-gray-700">Aadhaar Card</span>
+                              <a
+                                href={`${API_URL}${customer.kycDocuments.aadhaar}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-indigo-600 hover:text-indigo-700 text-xs"
+                              >
+                                View →
+                              </a>
+                            </div>
+                            {customer.kycDocuments.aadhaar.match(/\.(jpg|jpeg|png)$/i) && (
+                              <img
+                                src={`${API_URL}${customer.kycDocuments.aadhaar}`}
+                                alt="Aadhaar Card"
+                                className="w-full h-32 object-cover rounded mt-2 border border-gray-300"
+                              />
+                            )}
+                          </div>
+                        )}
+                        {customer.kycDocuments.pan && (
+                          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-gray-700">PAN Card</span>
+                              <a
+                                href={`${API_URL}${customer.kycDocuments.pan}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-indigo-600 hover:text-indigo-700 text-xs"
+                              >
+                                View →
+                              </a>
+                            </div>
+                            {customer.kycDocuments.pan.match(/\.(jpg|jpeg|png)$/i) && (
+                              <img
+                                src={`${API_URL}${customer.kycDocuments.pan}`}
+                                alt="PAN Card"
+                                className="w-full h-32 object-cover rounded mt-2 border border-gray-300"
+                              />
+                            )}
+                          </div>
+                        )}
+                        {customer.kycDocuments.photo && (
+                          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-gray-700">Customer Photo</span>
+                              <a
+                                href={`${API_URL}${customer.kycDocuments.photo}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-indigo-600 hover:text-indigo-700 text-xs"
+                              >
+                                View →
+                              </a>
+                            </div>
+                            {customer.kycDocuments.photo.match(/\.(jpg|jpeg|png)$/i) && (
+                              <img
+                                src={`${API_URL}${customer.kycDocuments.photo}`}
+                                alt="Customer Photo"
+                                className="w-full h-32 object-cover rounded mt-2 border border-gray-300"
+                              />
+                            )}
+                          </div>
+                        )}
+                        {customer.kycDocuments.addressProof && (
+                          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-gray-700">Address Proof</span>
+                              <a
+                                href={`${API_URL}${customer.kycDocuments.addressProof}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-indigo-600 hover:text-indigo-700 text-xs"
+                              >
+                                View →
+                              </a>
+                            </div>
+                            {customer.kycDocuments.addressProof.match(/\.(jpg|jpeg|png)$/i) && (
+                              <img
+                                src={`${API_URL}${customer.kycDocuments.addressProof}`}
+                                alt="Address Proof"
+                                className="w-full h-32 object-cover rounded mt-2 border border-gray-300"
+                              />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="mt-6 pt-4 border-t border-gray-200">
                     <button className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 mb-2">

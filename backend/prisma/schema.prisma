@@ -18,6 +18,7 @@ model User {
   updatedAt DateTime @updatedAt
   books     Book[]
   staff     Staff?
+  branchAccess UserBranchAccess[]
 }
 
 model Role {
@@ -51,6 +52,7 @@ model Book {
   loans     Loan[]
   people    Person[]
   deposits  Deposit[]
+  userAccess UserBranchAccess[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -163,4 +165,18 @@ model OTP {
 
   @@index([phone])
   @@index([expiresAt])
+}
+
+model UserBranchAccess {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId    String
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, bookId])
+  @@index([userId])
+  @@index([bookId])
 }

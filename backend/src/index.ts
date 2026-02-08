@@ -38,6 +38,9 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   exposedHeaders: ['Content-Type', 'Authorization'],
 }));
+
+// JSON and URL-encoded body parsers (but not for multipart/form-data)
+// Multer will handle multipart/form-data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -64,6 +67,7 @@ import loanRoutes from './routes/loanRoutes';
 import staffRoutes from './routes/staffRoutes';
 import roleRoutes from './routes/roleRoutes';
 import uploadRoutes from './routes/uploadRoutes';
+import userBranchRoutes from './routes/userBranchRoutes';
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -74,6 +78,7 @@ app.use('/api/loans', loanRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/user-branches', userBranchRoutes);
 
 // 404 handler
 app.use((req, res) => {

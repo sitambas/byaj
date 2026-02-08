@@ -104,6 +104,19 @@ export const getStaffById = async (req: PermissionRequest, res: Response) => {
       return res.status(404).json({ error: 'Staff not found' });
     }
 
+    // Get assigned branches
+    const branchAccess = await prisma.userBranchAccess.findMany({
+      where: { userId: staff.userId },
+      include: {
+        book: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
     res.json({
       staff: {
         id: staff.id,
@@ -118,6 +131,10 @@ export const getStaffById = async (req: PermissionRequest, res: Response) => {
         permissions: staff.permissions ? JSON.parse(staff.permissions) : null,
         phone: staff.user.phone,
         name: staff.user.name,
+        assignedBranches: branchAccess.map(access => ({
+          id: access.book.id,
+          name: access.book.name,
+        })),
         createdAt: staff.createdAt,
         updatedAt: staff.updatedAt,
       },
@@ -131,7 +148,7 @@ export const getStaffById = async (req: PermissionRequest, res: Response) => {
 export const createStaff = async (req: PermissionRequest, res: Response) => {
   try {
     const userId = req.userId;
-    const { phone, name, roleId, roleName, permissions } = req.body;
+    const { phone, name, roleId, roleName, permissions, branchIds } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -232,6 +249,28 @@ export const createStaff = async (req: PermissionRequest, res: Response) => {
       },
     });
 
+    // Assign branches if provided
+    if (branchIds && Array.isArray(branchIds) && branchIds.length > 0) {
+      // Verify requester owns the branches
+      const validBranchIds = branchIds.filter((id): id is string => typeof id === 'string');
+      const branches = await prisma.book.findMany({
+        where: {
+          id: { in: validBranchIds },
+          userId: userId, // Only allow if requester owns the branches
+        },
+      });
+
+      if (branches.length === validBranchIds.length) {
+        // Create branch assignments
+        await prisma.userBranchAccess.createMany({
+          data: validBranchIds.map((bookId: string) => ({
+            userId: user.id,
+            bookId,
+          })),
+        });
+      }
+    }
+
     res.status(201).json({
       staff: {
         id: staff.id,
@@ -260,7 +299,7 @@ export const updateStaff = async (req: PermissionRequest, res: Response) => {
   try {
     const userId = req.userId;
     const staffId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const { roleId, roleName, permissions, name } = req.body;
+    const { roleId, roleName, permissions, name, branchIds } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -355,6 +394,36 @@ export const updateStaff = async (req: PermissionRequest, res: Response) => {
         where: { id: staff.userId },
         data: { name: name || null },
       });
+    }
+
+    // Update branch assignments if provided
+    if (branchIds !== undefined) {
+      // Remove existing assignments
+      await prisma.userBranchAccess.deleteMany({
+        where: { userId: existingStaff.userId },
+      });
+
+      // Create new assignments if branchIds provided
+      if (Array.isArray(branchIds) && branchIds.length > 0) {
+        // Verify requester owns the branches
+        const validBranchIds = branchIds.filter((id): id is string => typeof id === 'string');
+        const branches = await prisma.book.findMany({
+          where: {
+            id: { in: validBranchIds },
+            userId: userId, // Only allow if requester owns the branches
+          },
+        });
+
+        if (branches.length === validBranchIds.length) {
+          // Create branch assignments
+          await prisma.userBranchAccess.createMany({
+            data: validBranchIds.map((bookId: string) => ({
+              userId: existingStaff.userId,
+              bookId,
+            })),
+          });
+        }
+      }
     }
 
     // Refresh staff data after user update

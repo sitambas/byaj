@@ -148,6 +148,51 @@ export const verify = async (req: Request, res: Response) => {
       });
     }
 
+    // Check if user is staff
+    const staff = await prisma.staff.findUnique({
+      where: { userId: user.id },
+      select: { id: true, roleName: true },
+    });
+
+    // Get user's assigned branches (works for both regular users and staff)
+    const branchAccess = await prisma.userBranchAccess.findMany({
+      where: { userId: user.id },
+      include: {
+        book: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    // Check if user is owner (has books they created)
+    // Owners see all their books, staff only see assigned branches
+    let ownedBooks: Array<{ id: string; name: string }> = [];
+    if (!staff) {
+      // Only non-staff (owners) can own books
+      ownedBooks = await prisma.book.findMany({
+        where: { userId: user.id },
+        select: {
+          id: true,
+          name: true,
+        },
+      });
+    }
+
+    // For staff: only show assigned branches
+    // For owners: show owned books + assigned branches
+    const allBranches = [
+      ...ownedBooks.map(book => ({ id: book.id, name: book.name, isOwner: true })),
+      ...branchAccess.map(access => ({ id: access.book.id, name: access.book.name, isOwner: false })),
+    ];
+
+    // Remove duplicates (in case user owns a branch they're also assigned to)
+    const uniqueBranches = Array.from(
+      new Map(allBranches.map(branch => [branch.id, branch])).values()
+    );
+
     // Generate JWT token
     const token = generateToken(user.id);
 
@@ -158,6 +203,7 @@ export const verify = async (req: Request, res: Response) => {
         phone: user.phone,
         name: user.name,
       },
+      branches: uniqueBranches,
       token,
     });
   } catch (error: any) {
@@ -189,7 +235,55 @@ export const getMe = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({ user });
+    // Check if user is staff
+    const staff = await prisma.staff.findUnique({
+      where: { userId },
+      select: { id: true, roleName: true },
+    });
+
+    // Get user's assigned branches (works for both regular users and staff)
+    const branchAccess = await prisma.userBranchAccess.findMany({
+      where: { userId },
+      include: {
+        book: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    // Check if user is owner (has books they created)
+    // Owners see all their books, staff only see assigned branches
+    let ownedBooks: Array<{ id: string; name: string }> = [];
+    if (!staff) {
+      // Only non-staff (owners) can own books
+      ownedBooks = await prisma.book.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          name: true,
+        },
+      });
+    }
+
+    // For staff: only show assigned branches
+    // For owners: show owned books + assigned branches
+    const allBranches = [
+      ...ownedBooks.map(book => ({ id: book.id, name: book.name, isOwner: true })),
+      ...branchAccess.map(access => ({ id: access.book.id, name: access.book.name, isOwner: false })),
+    ];
+
+    // Remove duplicates
+    const uniqueBranches = Array.from(
+      new Map(allBranches.map(branch => [branch.id, branch])).values()
+    );
+
+    res.json({ 
+      user,
+      branches: uniqueBranches,
+    });
   } catch (error: any) {
     console.error('Get me error:', error);
     res.status(500).json({ error: error.message || 'Internal server error' });

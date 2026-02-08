@@ -17,29 +17,50 @@ export default function PeoplePage() {
   const people = useSelector((state: RootState) => state.people.people);
   const selectedBook = useSelector((state: RootState) => state.book.selectedBook);
   const books = useSelector((state: RootState) => state.book.books);
+  const userBranches = useSelector((state: RootState) => state.book.userBranches);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isOwner, setIsOwner] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
+  const [networkError, setNetworkError] = useState(false);
 
   useEffect(() => {
     const initialize = async () => {
-      const permissions = await getUserPermissions();
-      setIsOwner(permissions.isOwner);
-      
-      // Fetch books
       try {
-        const response = await bookAPI.getAll();
-        dispatch(setBooks(response.data.books));
+        const permissions = await getUserPermissions();
+        setIsOwner(permissions.isOwner);
         
-        // For super admin, auto-select first branch if available
-        if (permissions.isOwner && response.data.books.length > 0 && !selectedBranchId) {
-          const firstBook = response.data.books[0];
-          setSelectedBranchId(firstBook.id);
-          dispatch(setSelectedBook(firstBook));
+        // Fetch books (this will return only accessible branches)
+        try {
+          const response = await bookAPI.getAll();
+          dispatch(setBooks(response.data.books));
+          
+          // Use userBranches if available (from login), otherwise use books from API
+          const availableBranches = userBranches.length > 0 ? userBranches : response.data.books;
+          
+          // Auto-select first branch if available and none selected
+          if (availableBranches.length > 0 && !selectedBook) {
+            const firstBranch = availableBranches[0];
+            setSelectedBranchId(firstBranch.id);
+            dispatch(setSelectedBook(firstBranch));
+          }
+          
+          // For super admin, also allow selecting from dropdown
+          if (permissions.isOwner && response.data.books.length > 0 && !selectedBranchId) {
+            const firstBook = response.data.books[0];
+            setSelectedBranchId(firstBook.id);
+            dispatch(setSelectedBook(firstBook));
+          }
+        } catch (error: any) {
+          console.error('Failed to fetch books:', error);
+          // If it's a network error, the backend might not be running
+          if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+            console.error('Network error: Make sure the backend server is running on http://localhost:4000');
+            setNetworkError(true);
+          }
         }
-      } catch (error) {
-        console.error('Failed to fetch books:', error);
+      } catch (error: any) {
+        console.error('Failed to get permissions:', error);
       }
     };
     
@@ -47,11 +68,17 @@ export default function PeoplePage() {
   }, []);
 
   useEffect(() => {
+    // For staff: use selectedBook from Redux (set from userBranches)
+    // For owner: use selectedBranchId from dropdown
     const branchId = isOwner ? selectedBranchId : selectedBook?.id;
     if (branchId) {
       fetchPeople(branchId);
+    } else if (!isOwner && userBranches.length > 0 && !selectedBook) {
+      // Auto-select first branch for staff if not already selected
+      const firstBranch = userBranches[0];
+      dispatch(setSelectedBook(firstBranch));
     }
-  }, [selectedBook, selectedBranchId, isOwner, search]);
+  }, [selectedBook, selectedBranchId, isOwner, search, userBranches, dispatch]);
 
   const handleBranchChange = (branchId: string) => {
     setSelectedBranchId(branchId);
@@ -89,7 +116,15 @@ export default function PeoplePage() {
           <main className="flex-1 p-6">
             <div className="mb-6 flex items-center justify-between">
               <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-900">Customer List</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Customer List</h1>
+                {networkError && (
+                  <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    <p className="font-semibold">Connection Error</p>
+                    <p className="text-sm mt-1">
+                      Cannot connect to the backend server. Please make sure the backend is running on <code className="bg-red-100 px-1 rounded">http://localhost:4000</code>
+                    </p>
+                  </div>
+                )}
                 {isOwner ? (
                   <div className="mt-3 flex items-center space-x-3">
                     <label htmlFor="branch-select" className="text-sm font-medium text-gray-700">
@@ -213,12 +248,12 @@ export default function PeoplePage() {
                         No customers found in <strong>{currentBranch?.name || 'selected'}</strong> branch.
                       </p>
                       <p className="text-gray-500 mb-4">Add your first customer to get started.</p>
-                      <Link
+                <Link
                         href="/customer/add"
-                        className="inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
-                      >
-                        Add customer
-                      </Link>
+                  className="inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
+                >
+                  Add customer
+                </Link>
                     </>
                   );
                 })()}

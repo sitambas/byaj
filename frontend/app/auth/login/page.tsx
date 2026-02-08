@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '@/store/slices/authSlice';
+import { setUserBranches, setSelectedBook } from '@/store/slices/bookSlice';
 import { authAPI } from '@/services/api';
 import Logo from '@/components/Logo';
 
@@ -43,7 +44,7 @@ export default function LoginPage() {
 
     try {
       const response = await authAPI.verify(phone, otp);
-      const { user, token } = response.data;
+      const { user, token, branches } = response.data;
 
       if (!token) {
         throw new Error('No token received from server');
@@ -51,6 +52,14 @@ export default function LoginPage() {
 
       // Store credentials in Redux and localStorage
       dispatch(setCredentials({ user, token }));
+      
+      // Store user branches and auto-select if only one
+      if (branches && branches.length > 0) {
+        dispatch(setUserBranches(branches));
+        if (branches.length === 1) {
+          dispatch(setSelectedBook(branches[0]));
+        }
+      }
       
       // Wait a moment to ensure localStorage is updated
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -88,13 +97,21 @@ export default function LoginPage() {
       await new Promise(resolve => setTimeout(resolve, 500));
       
       const verifyResponse = await authAPI.verify(testPhone, testOTP);
-      const { user, token } = verifyResponse.data;
+      const { user, token, branches } = verifyResponse.data;
 
       if (!token) {
         throw new Error('No token received from server');
       }
 
       dispatch(setCredentials({ user, token }));
+      
+      // Store user branches and auto-select if only one
+      if (branches && branches.length > 0) {
+        dispatch(setUserBranches(branches));
+        if (branches.length === 1) {
+          dispatch(setSelectedBook(branches[0]));
+        }
+      }
       
       await new Promise(resolve => setTimeout(resolve, 100));
       

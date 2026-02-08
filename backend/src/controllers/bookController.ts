@@ -10,18 +10,33 @@ export const getAllBooks = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Check if user is owner (not in Staff table) - owners see all books
-    const staff = await prisma.staff.findUnique({
+    // Get user's assigned branch IDs
+    const branchAccess = await prisma.userBranchAccess.findMany({
+      where: { userId },
+      select: { bookId: true },
+    });
+    const assignedBranchIds = branchAccess.map(access => access.bookId);
+
+    // Get user's owned books (books they created)
+    const ownedBooks = await prisma.book.findMany({
       where: { userId },
       select: { id: true },
     });
+    const ownedBookIds = ownedBooks.map(book => book.id);
 
-    // If user is not in Staff table, they are the owner - show all books
-    // If user is staff, show only their own books
-    const whereClause = staff ? { userId } : {};
+    // Combine owned and assigned branch IDs
+    const accessibleBookIds = [...new Set([...ownedBookIds, ...assignedBranchIds])];
 
+    // If user has no access, return empty array
+    if (accessibleBookIds.length === 0) {
+      return res.json({ books: [] });
+    }
+
+    // Get all accessible books
     const books = await prisma.book.findMany({
-      where: whereClause,
+      where: {
+        id: { in: accessibleBookIds },
+      },
       include: {
         user: {
           select: {
@@ -39,7 +54,8 @@ export const getAllBooks = async (req: AuthRequest, res: Response) => {
         id: book.id,
         name: book.name,
         userId: book.userId,
-        owner: staff ? undefined : {
+        isOwner: ownedBookIds.includes(book.id),
+        owner: {
           id: book.user.id,
           name: book.user.name,
           phone: book.user.phone,

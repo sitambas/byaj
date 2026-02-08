@@ -28,6 +28,14 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle network errors
+    if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+      console.error('Network Error: Backend server might not be running or unreachable');
+      console.error('API URL:', API_URL);
+      // Don't redirect on network errors, let the component handle it
+      return Promise.reject(error);
+    }
+    
     if (error.response?.status === 401) {
       // Handle unauthorized - redirect to login
       if (typeof window !== 'undefined') {
@@ -104,8 +112,8 @@ export const staffAPI = {
   getAll: () => api.get('/api/staff'),
   getById: (id: string) => api.get(`/api/staff/${id}`),
   getMe: () => api.get('/api/staff/me'),
-  create: (data: { phone: string; name?: string; roleId?: string; roleName?: string; permissions?: string[] }) => api.post('/api/staff', data),
-  update: (id: string, data: { roleId?: string | null; roleName?: string; permissions?: string[] | null; name?: string }) => api.put(`/api/staff/${id}`, data),
+  create: (data: { phone: string; name?: string; roleId?: string; roleName?: string; permissions?: string[]; branchIds?: string[] }) => api.post('/api/staff', data),
+  update: (id: string, data: { roleId?: string | null; roleName?: string; permissions?: string[] | null; name?: string; branchIds?: string[] }) => api.put(`/api/staff/${id}`, data),
   delete: (id: string) => api.delete(`/api/staff/${id}`),
 };
 
