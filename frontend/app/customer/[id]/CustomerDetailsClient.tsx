@@ -18,7 +18,7 @@ export default function CustomerDetailsClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
 
   useEffect(() => {
     if (customerId) {
@@ -50,15 +50,15 @@ export default function CustomerDetailsClient() {
   const handleDelete = async () => {
     if (!customerId) return;
 
-    setDeleting(true);
+    setDeactivating(true);
     try {
       await personAPI.delete(customerId);
       router.push('/customer');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to delete customer');
+      setError(err.response?.data?.error || 'Failed to deactivate customer');
       setShowDeleteConfirm(false);
     } finally {
-      setDeleting(false);
+      setDeactivating(false);
     }
   };
 
@@ -164,7 +164,11 @@ export default function CustomerDetailsClient() {
                     )}
                     <div className="flex justify-between">
                       <span className="text-gray-500">Status:</span>
-                      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        customer.status === 'INACTIVE' 
+                          ? 'bg-gray-100 text-gray-800' 
+                          : 'bg-green-100 text-green-800'
+                      }`}>
                         {customer.status || 'ACTIVE'}
                       </span>
                     </div>
@@ -311,12 +315,14 @@ export default function CustomerDetailsClient() {
                     >
                       Edit Customer
                     </Link>
-                    <button
-                      onClick={() => setShowDeleteConfirm(true)}
-                      className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                    >
-                      Delete Customer
-                    </button>
+                    {customer.status !== 'INACTIVE' && (
+                      <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                      >
+                        Deactivate Customer
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -425,25 +431,25 @@ export default function CustomerDetailsClient() {
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Delete Customer
+                Deactivate Customer
               </h3>
               <p className="text-gray-600 mb-6">
-                Are you sure you want to delete <strong>{customer?.name}</strong>? This action cannot be undone.
+                Are you sure you want to deactivate <strong>{customer?.name}</strong>? The customer will be marked as inactive and hidden from the customer list.
               </p>
               <div className="flex space-x-4">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  disabled={deleting}
+                  disabled={deactivating}
                   className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
                 >
                   No, Cancel
                 </button>
                 <button
                   onClick={handleDelete}
-                  disabled={deleting}
+                  disabled={deactivating}
                   className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
                 >
-                  {deleting ? 'Deleting...' : 'Yes, Delete'}
+                  {deactivating ? 'Deactivating...' : 'Yes, Deactivate'}
                 </button>
               </div>
             </div>

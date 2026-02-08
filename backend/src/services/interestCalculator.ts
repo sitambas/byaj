@@ -6,7 +6,7 @@ export class InterestCalculator {
     principal: number,
     rate: number,
     days: number,
-    interestEvery: 'DAILY' | 'WEEKLY' | 'MONTHLY'
+    interestEvery: 'DAILY' | 'WEEKLY' | 'HALF_MONTHLY' | 'MONTHLY'
   ): number {
     const periods = this.getPeriods(days, interestEvery);
     return (principal * rate * periods) / 100;
@@ -19,8 +19,8 @@ export class InterestCalculator {
     principal: number,
     rate: number,
     days: number,
-    interestEvery: 'DAILY' | 'WEEKLY' | 'MONTHLY',
-    compoundingFrequency: 'DAILY' | 'WEEKLY' | 'MONTHLY' = 'MONTHLY'
+    interestEvery: 'DAILY' | 'WEEKLY' | 'HALF_MONTHLY' | 'MONTHLY',
+    compoundingFrequency: 'DAILY' | 'WEEKLY' | 'HALF_MONTHLY' | 'MONTHLY' = 'MONTHLY'
   ): number {
     const periods = this.getPeriods(days, interestEvery);
     const n = this.getCompoundingPeriods(compoundingFrequency);
@@ -52,6 +52,34 @@ export class InterestCalculator {
   }
 
   /**
+   * Half Monthly calculation - rounds up partial half-months
+   */
+  static halfMonthlyCalculation(
+    principal: number,
+    rate: number,
+    startDate: Date,
+    endDate: Date
+  ): number {
+    const days = Math.ceil(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const halfMonths = Math.ceil(days / 15);
+    return (principal * rate * halfMonths) / (100 * 24); // 24 half-months per year
+  }
+
+  /**
+   * Weekly calculation - rounds up partial weeks
+   */
+  static weeklyCalculation(
+    principal: number,
+    rate: number,
+    days: number
+  ): number {
+    const weeks = Math.ceil(days / 7);
+    return (principal * rate * weeks) / (100 * 52); // 52 weeks per year
+  }
+
+  /**
    * Calculate interest based on loan configuration
    */
   static calculateInterest(
@@ -60,8 +88,8 @@ export class InterestCalculator {
     startDate: Date,
     endDate: Date | null,
     loanType: 'WITH_INTEREST' | 'FIXED_AMOUNT',
-    interestCalc: 'MONTHLY' | 'DAILY',
-    interestEvery: 'DAILY' | 'WEEKLY' | 'MONTHLY',
+    interestCalc: 'MONTHLY' | 'HALF_MONTHLY' | 'WEEKLY' | 'DAILY',
+    interestEvery: 'DAILY' | 'WEEKLY' | 'HALF_MONTHLY' | 'MONTHLY',
     hasCompounding: boolean
   ): number {
     if (loanType === 'FIXED_AMOUNT') {
@@ -89,6 +117,10 @@ export class InterestCalculator {
 
     if (interestCalc === 'MONTHLY') {
       return this.monthlyCalculation(principal, rate, startDate, endDate);
+    } else if (interestCalc === 'HALF_MONTHLY') {
+      return this.halfMonthlyCalculation(principal, rate, startDate, endDate);
+    } else if (interestCalc === 'WEEKLY') {
+      return this.weeklyCalculation(principal, rate, days);
     } else {
       return this.dailyCalculation(principal, rate, days);
     }
@@ -99,13 +131,15 @@ export class InterestCalculator {
    */
   private static getPeriods(
     days: number,
-    interestEvery: 'DAILY' | 'WEEKLY' | 'MONTHLY'
+    interestEvery: 'DAILY' | 'WEEKLY' | 'HALF_MONTHLY' | 'MONTHLY'
   ): number {
     switch (interestEvery) {
       case 'DAILY':
         return days;
       case 'WEEKLY':
         return Math.ceil(days / 7);
+      case 'HALF_MONTHLY':
+        return Math.ceil(days / 15);
       case 'MONTHLY':
         return Math.ceil(days / 30);
       default:
@@ -117,13 +151,15 @@ export class InterestCalculator {
    * Get compounding periods per year
    */
   private static getCompoundingPeriods(
-    frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY'
+    frequency: 'DAILY' | 'WEEKLY' | 'HALF_MONTHLY' | 'MONTHLY'
   ): number {
     switch (frequency) {
       case 'DAILY':
         return 365;
       case 'WEEKLY':
         return 52;
+      case 'HALF_MONTHLY':
+        return 24;
       case 'MONTHLY':
         return 12;
       default:

@@ -46,6 +46,12 @@ export const getAllPeople = async (req: AuthRequest, res: Response) => {
       bookId: { in: accessibleBranchIds },
     };
 
+    // Filter by status if provided, otherwise show all (ACTIVE and INACTIVE)
+    if (status) {
+      where.status = status;
+    }
+    // If no status filter, show all customers (both ACTIVE and INACTIVE)
+
     // If specific bookId is requested, verify it's in accessible branches
     if (bookId) {
       const requestedBookId = bookId as string;
@@ -74,9 +80,8 @@ export const getAllPeople = async (req: AuthRequest, res: Response) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Calculate status based on loans
+    // Map people with their actual status from database
     const peopleWithStatus = people.map((person) => {
-      // Status will be determined by active loans
       return {
         id: person.id,
         name: person.name,
@@ -85,7 +90,7 @@ export const getAllPeople = async (req: AuthRequest, res: Response) => {
         accountNo: person.accountNo,
         kycDocuments: person.kycDocuments ? JSON.parse(person.kycDocuments) : null,
         loansCount: person._count.loans,
-        status: 'ACTIVE', // TODO: Calculate based on loans
+        status: person.status || 'ACTIVE', // Use actual status from database
         createdAt: person.createdAt,
         updatedAt: person.updatedAt,
       };
@@ -111,27 +116,73 @@ export const getPersonById = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Person ID is required' });
     }
 
-    const person = await prisma.person.findFirst({
-      where: {
-        id,
-        book: { userId },
-      },
-      include: {
-        book: {
-          select: {
-            id: true,
-            name: true,
+    // Check if user is staff
+    const staff = await prisma.staff.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    // Verify person access - owners can access their own books, staff can access assigned branches
+    let person = null;
+    if (staff) {
+      // Staff: Check if they have access to the person's branch
+      const personData = await prisma.person.findUnique({
+        where: { id },
+        include: { book: true },
+      });
+      
+      if (personData) {
+        const branchAccess = await prisma.userBranchAccess.findFirst({
+          where: {
+            userId,
+            bookId: personData.bookId,
           },
+        });
+        if (branchAccess) {
+          person = await prisma.person.findUnique({
+            where: { id },
+            include: {
+              book: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              loans: {
+                include: {
+                  transactions: {
+                    where: { type: 'PAYMENT' },
+                  },
+                },
+              },
+            },
+          });
+        }
+      }
+    } else {
+      // Owner: Check if they own the book
+      person = await prisma.person.findFirst({
+        where: {
+          id,
+          book: { userId },
         },
-        loans: {
-          include: {
-            transactions: {
-              where: { type: 'PAYMENT' },
+        include: {
+          book: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          loans: {
+            include: {
+              transactions: {
+                where: { type: 'PAYMENT' },
+              },
             },
           },
         },
-      },
-    });
+      });
+    }
 
     if (!person) {
       return res.status(404).json({ error: 'Person not found' });
@@ -307,6 +358,7 @@ export const createPerson = async (req: AuthRequest, res: Response) => {
         accountNo: finalAccountNo,
         bookId,
         kycDocuments: kycDocs,
+        status: 'ACTIVE',
       },
     });
 
@@ -454,11 +506,15 @@ export const deletePerson = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Person not found' });
     }
 
-    await prisma.person.delete({
+    // Set status to INACTIVE instead of deleting
+    const person = await prisma.person.update({
       where: { id },
+      data: {
+        status: 'INACTIVE',
+      },
     });
 
-    res.json({ message: 'Person deleted successfully' });
+    res.json({ message: 'Person deactivated successfully', person });
   } catch (error: any) {
     console.error('Delete person error:', error);
     res.status(500).json({ error: error.message || 'Internal server error' });

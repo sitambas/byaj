@@ -66,12 +66,14 @@ model Person {
   bookId          String
   book            Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
   kycDocuments    String?  // JSON string of KYC document URLs: { aadhaar?: string, pan?: string, photo?: string, addressProof?: string, signature?: string }
+  status          String   @default("ACTIVE") // ACTIVE, INACTIVE
   loans           Loan[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@index([bookId])
   @@index([phone])
+  @@index([status])
 }
 
 model Loan {
@@ -83,16 +85,17 @@ model Loan {
   book              Book         @relation(fields: [bookId], references: [id], onDelete: Cascade)
   accountType       String       // LENT or BORROWED
   loanType          String       // WITH_INTEREST or FIXED_AMOUNT
-  interestCalc      String       // MONTHLY or DAILY
+  interestCalc      String       // MONTHLY, HALF_MONTHLY, WEEKLY, or DAILY
   principalAmount   Float
   interestRate      Float
-  interestEvery     String       // DAILY, WEEKLY, MONTHLY
+  interestEvery     String       // DAILY, WEEKLY, HALF_MONTHLY, MONTHLY
   startDate         DateTime
   endDate           DateTime?
   hasEMI            Boolean      @default(false)
   numberOfEMI        Int?
   hasCompounding    Boolean      @default(false)
   dateToDateCalc    Boolean      @default(false)
+  processFee        Float        @default(0)
   status            String       @default("ACTIVE") // ACTIVE, SETTLED, DELETED, MUTED
   strategy          String       // FIXED_AMOUNT, SIMPLE_INTEREST, COMPOUND_INTEREST, WITH_EMI
   remarks           String?

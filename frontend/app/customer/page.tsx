@@ -287,56 +287,76 @@ export default function PeoplePage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {people.map((person) => (
-                      <tr key={person.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
-                              <span className="text-indigo-600 font-semibold">
-                                {person.name.charAt(0).toUpperCase()}
-                              </span>
+                    {people.map((person) => {
+                      const isInactive = person.status === 'INACTIVE';
+                      return (
+                        <tr 
+                          key={person.id} 
+                          className={`hover:bg-gray-50 ${isInactive ? 'opacity-60' : ''}`}
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+                                isInactive ? 'bg-gray-100' : 'bg-indigo-100'
+                              }`}>
+                                <span className={`font-semibold ${
+                                  isInactive ? 'text-gray-500' : 'text-indigo-600'
+                                }`}>
+                                  {person.name.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <div>
+                                <div className={`text-sm font-medium ${
+                                  isInactive ? 'text-gray-500' : 'text-gray-900'
+                                }`}>
+                                  {person.name}
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">{person.name}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className={`text-sm ${isInactive ? 'text-gray-500' : 'text-gray-900'}`}>
+                              📞 {person.phone}
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">📞 {person.phone}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {person.accountNo || 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {(() => {
-                            const currentBranch = isOwner 
-                              ? books.find((b) => b.id === selectedBranchId)
-                              : selectedBook;
-                            return currentBranch ? (
-                              <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
-                                📚 {currentBranch.name}
-                              </span>
-                            ) : null;
-                          })()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            {person.status || 'ACTIVE'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {person.loansCount || 0}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <Link
-                            href={`/customer/${person.id}`}
-                            className="text-indigo-600 hover:text-indigo-900"
-                          >
-                            View →
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {person.accountNo || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {(() => {
+                              const currentBranch = isOwner 
+                                ? books.find((b) => b.id === selectedBranchId)
+                                : selectedBook;
+                              return currentBranch ? (
+                                <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                                  📚 {currentBranch.name}
+                                </span>
+                              ) : null;
+                            })()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              isInactive 
+                                ? 'bg-gray-100 text-gray-800' 
+                                : 'bg-green-100 text-green-800'
+                            }`}>
+                              {person.status || 'ACTIVE'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {person.loansCount || 0}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <Link
+                              href={`/customer/${person.id}`}
+                              className="text-indigo-600 hover:text-indigo-900"
+                            >
+                              View →
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

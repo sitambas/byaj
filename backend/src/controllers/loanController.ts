@@ -100,8 +100,8 @@ export const getAllLoans = async (req: AuthRequest, res: Response) => {
         loan.startDate,
         loan.endDate,
         loan.loanType as 'WITH_INTEREST' | 'FIXED_AMOUNT',
-        loan.interestCalc as 'MONTHLY' | 'DAILY',
-        loan.interestEvery as 'DAILY' | 'WEEKLY' | 'MONTHLY',
+        loan.interestCalc as 'MONTHLY' | 'HALF_MONTHLY' | 'WEEKLY' | 'DAILY',
+        loan.interestEvery as 'DAILY' | 'WEEKLY' | 'HALF_MONTHLY' | 'MONTHLY',
         loan.hasCompounding
       );
       const total = loan.principalAmount + interest;
@@ -176,8 +176,8 @@ export const getLoanById = async (req: AuthRequest, res: Response) => {
       loan.startDate,
       loan.endDate,
       loan.loanType as 'WITH_INTEREST' | 'FIXED_AMOUNT',
-      loan.interestCalc as 'MONTHLY' | 'DAILY',
-      loan.interestEvery as 'DAILY' | 'WEEKLY' | 'MONTHLY',
+      loan.interestCalc as 'MONTHLY' | 'HALF_MONTHLY' | 'WEEKLY' | 'DAILY',
+      loan.interestEvery as 'DAILY' | 'WEEKLY' | 'HALF_MONTHLY' | 'MONTHLY',
       loan.hasCompounding
     );
 
@@ -237,6 +237,7 @@ export const createLoan = async (req: AuthRequest, res: Response) => {
       strategy,
       remarks,
       billNumber,
+      processFee,
     } = req.body;
 
     if (!userId) {
@@ -316,6 +317,7 @@ export const createLoan = async (req: AuthRequest, res: Response) => {
         numberOfEMI: numberOfEMI || null,
         hasCompounding: hasCompounding || false,
         dateToDateCalc: dateToDateCalc || false,
+        processFee: processFee ? parseFloat(processFee) : 0,
         strategy: strategy || 'SIMPLE_INTEREST',
         remarks: remarks || null,
         status: 'ACTIVE',
