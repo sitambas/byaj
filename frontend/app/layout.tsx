@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   useEffect(() => {
-    document.title = "ByajBook - Loan Management System";
+    document.title = "KripaNidhi - Loan Management System";
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
       metaDescription.setAttribute('content', 'Digitalizing lending for Bharat');

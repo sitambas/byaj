@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -79,7 +80,8 @@ export default function LoanDetailsPage() {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
 
@@ -239,7 +241,7 @@ export default function LoanDetailsPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Rate of interest:</span>
-                      <span className="font-medium">{loan.interestRate}% {loan.interestCalc}</span>
+                      <span className="font-medium">{loan.interestRate}% yearly ({loan.interestCalc} calculation)</span>
                     </div>
                     {loan.hasEMI && (
                       <>
@@ -262,9 +264,12 @@ export default function LoanDetailsPage() {
                 <div className="bg-white p-6 rounded-lg shadow">
                   <div className="flex justify-between mb-4">
                     <h3 className="text-lg font-semibold">Financial Summary</h3>
-                    <button className="text-indigo-600 hover:text-indigo-700 text-sm">
+                    <Link
+                      href={`/loans/${loanId}/edit`}
+                      className="text-indigo-600 hover:text-indigo-700 text-sm"
+                    >
                       Edit
-                    </button>
+                    </Link>
                   </div>
 
                   <div className="space-y-3 text-sm">

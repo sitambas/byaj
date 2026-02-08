@@ -94,17 +94,55 @@ export const getAllLoans = async (req: AuthRequest, res: Response) => {
     // Calculate totals for each loan
     const loansWithTotals = loans.map((loan) => {
       const recovered = loan.transactions.reduce((sum, t) => sum + t.amount, 0);
-      const interest = InterestCalculator.calculateInterest(
-        loan.principalAmount,
-        loan.interestRate,
-        loan.startDate,
-        loan.endDate,
-        loan.loanType as 'WITH_INTEREST' | 'FIXED_AMOUNT',
-        loan.interestCalc as 'MONTHLY' | 'HALF_MONTHLY' | 'WEEKLY' | 'DAILY',
-        loan.interestEvery as 'DAILY' | 'WEEKLY' | 'HALF_MONTHLY' | 'MONTHLY',
-        loan.hasCompounding
-      );
-      const total = loan.principalAmount + interest;
+      
+      // For loans with EMI, calculate interest based on the loan period (endDate or tenure)
+      // For loans without endDate, use the loan's tenure if available, otherwise don't calculate interest
+      let calculatedEndDate = loan.endDate;
+      
+      // If loan has EMI and numberOfEMI, calculate endDate based on that
+      if (!calculatedEndDate && loan.hasEMI && loan.numberOfEMI) {
+        calculatedEndDate = new Date(loan.startDate);
+        switch (loan.interestCalc) {
+          case 'MONTHLY':
+            calculatedEndDate.setMonth(calculatedEndDate.getMonth() + loan.numberOfEMI);
+            break;
+          case 'HALF_MONTHLY':
+            calculatedEndDate.setDate(calculatedEndDate.getDate() + (loan.numberOfEMI * 15));
+            break;
+          case 'WEEKLY':
+            calculatedEndDate.setDate(calculatedEndDate.getDate() + (loan.numberOfEMI * 7));
+            break;
+          case 'DAILY':
+            calculatedEndDate.setDate(calculatedEndDate.getDate() + loan.numberOfEMI);
+            break;
+        }
+      }
+      
+      // Calculate interest - use calculatedEndDate if available, otherwise use loan.endDate
+      // If both are null, InterestCalculator will default to today (which we want to avoid)
+      // So we only calculate if we have a valid endDate
+      let interest = 0;
+      const endDateForCalculation = calculatedEndDate || loan.endDate;
+      
+      if (endDateForCalculation) {
+        interest = InterestCalculator.calculateInterest(
+          loan.principalAmount,
+          loan.interestRate,
+          loan.startDate,
+          endDateForCalculation,
+          loan.loanType as 'WITH_INTEREST' | 'FIXED_AMOUNT',
+          loan.interestCalc as 'MONTHLY' | 'HALF_MONTHLY' | 'WEEKLY' | 'DAILY',
+          loan.interestEvery as 'DAILY' | 'WEEKLY' | 'HALF_MONTHLY' | 'MONTHLY',
+          loan.hasCompounding
+        );
+      } else {
+        // If no endDate and no EMI, we can't calculate accurate interest
+        // Set to 0 to avoid showing incorrect high interest
+        interest = 0;
+      }
+      
+      const processFee = loan.processFee || 0;
+      const total = loan.principalAmount + interest + processFee;
       const outstanding = total - recovered;
 
       return {
@@ -120,6 +158,7 @@ export const getAllLoans = async (req: AuthRequest, res: Response) => {
         status: loan.status,
         strategy: loan.strategy,
         accountType: loan.accountType,
+        remarks: loan.remarks,
       };
     });
 
@@ -170,11 +209,34 @@ export const getLoanById = async (req: AuthRequest, res: Response) => {
       .filter((t: any) => t.type === 'TOPUP')
       .reduce((sum: number, t: any) => sum + t.amount, 0);
 
+    // For loans with EMI, calculate endDate based on the loan period (endDate or tenure)
+    // For loans without endDate, use the loan's tenure if available, otherwise calculate to today
+    let calculatedEndDate = loan.endDate;
+    
+    // If loan has EMI and numberOfEMI, calculate endDate based on that
+    if (!calculatedEndDate && loan.hasEMI && loan.numberOfEMI) {
+      calculatedEndDate = new Date(loan.startDate);
+      switch (loan.interestCalc) {
+        case 'MONTHLY':
+          calculatedEndDate.setMonth(calculatedEndDate.getMonth() + loan.numberOfEMI);
+          break;
+        case 'HALF_MONTHLY':
+          calculatedEndDate.setDate(calculatedEndDate.getDate() + (loan.numberOfEMI * 15));
+          break;
+        case 'WEEKLY':
+          calculatedEndDate.setDate(calculatedEndDate.getDate() + (loan.numberOfEMI * 7));
+          break;
+        case 'DAILY':
+          calculatedEndDate.setDate(calculatedEndDate.getDate() + loan.numberOfEMI);
+          break;
+      }
+    }
+
     const interest = InterestCalculator.calculateInterest(
       loan.principalAmount,
       loan.interestRate,
       loan.startDate,
-      loan.endDate,
+      calculatedEndDate,
       loan.loanType as 'WITH_INTEREST' | 'FIXED_AMOUNT',
       loan.interestCalc as 'MONTHLY' | 'HALF_MONTHLY' | 'WEEKLY' | 'DAILY',
       loan.interestEvery as 'DAILY' | 'WEEKLY' | 'HALF_MONTHLY' | 'MONTHLY',
@@ -183,10 +245,12 @@ export const getLoanById = async (req: AuthRequest, res: Response) => {
 
     const processFee = loan.processFee || 0;
     const total = loan.principalAmount + topup + interest + processFee;
-    const amountLeft = total - recovered;
+    // Cap recovered amount at total to prevent negative amounts or over-recovery
+    const cappedRecovered = Math.min(recovered, total);
+    const amountLeft = total - cappedRecovered;
 
     // Calculate time duration
-    const endDate = loan.endDate || new Date();
+    const endDate = calculatedEndDate || loan.endDate || new Date();
     const days = Math.ceil(
       (endDate.getTime() - loan.startDate.getTime()) / (1000 * 60 * 60 * 24)
     );
@@ -247,7 +311,7 @@ export const getLoanById = async (req: AuthRequest, res: Response) => {
           processFee,
           total,
           topup,
-          amountRecovered: recovered,
+          amountRecovered: cappedRecovered,
           amountLeft,
           timeDuration: {
             years,

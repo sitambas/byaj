@@ -29,6 +29,7 @@ export class InterestCalculator {
 
   /**
    * Monthly calculation - rounds up partial months
+   * Rate is yearly, so we divide by 12 to get monthly rate
    */
   static monthlyCalculation(
     principal: number,
@@ -37,7 +38,7 @@ export class InterestCalculator {
     endDate: Date
   ): number {
     const months = this.getMonthsBetween(startDate, endDate);
-    return (principal * rate * months) / 100;
+    return (principal * rate * months) / (100 * 12); // Divide by 12 to convert yearly rate to monthly
   }
 
   /**

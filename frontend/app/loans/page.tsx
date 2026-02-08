@@ -9,6 +9,7 @@ import Header from '@/components/layout/Header';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { loanAPI } from '@/services/api';
 import Link from 'next/link';
+import { getLoanCategoryFromRemarks } from '@/utils/loanCategories';
 
 export default function LoansPage() {
   const dispatch = useDispatch();
@@ -55,6 +56,7 @@ export default function LoansPage() {
       day: 'numeric',
     });
   };
+
 
   return (
     <ProtectedRoute>
@@ -204,7 +206,7 @@ export default function LoansPage() {
                         STATUS
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                        STRATEGY
+                        LOAN TYPE
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                         ACTIONS
@@ -248,8 +250,8 @@ export default function LoansPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                            {loan.strategy}
+                          <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                            {getLoanCategoryFromRemarks(loan.remarks)}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

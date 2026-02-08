@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { loanAPI, personAPI } from '@/services/api';
+import { LOAN_CATEGORIES } from '@/utils/loanCategories';
 
 export default function AddLoanForm() {
   const router = useRouter();
@@ -15,11 +16,9 @@ export default function AddLoanForm() {
   const [formData, setFormData] = useState({
     // Customer details
     personId: '',
-    personName: '',
-    personPhone: '',
-    personAddress: '',
     // Loan Type
     loanType: 'WITH_INTEREST', // WITH_INTEREST or FIXED_AMOUNT
+    loanCategory: 'PERSONAL_LOAN', // PERSONAL_LOAN, MOBILE_LOAN, TV_LOAN
     interestCalc: 'MONTHLY', // MONTHLY, HALF_MONTHLY, WEEKLY, DAILY
     // Loan Details
     principalAmount: '',
@@ -177,8 +176,8 @@ export default function AddLoanForm() {
       return;
     }
 
-    if (!formData.personId && !formData.personName) {
-      alert('Please select or add a customer');
+    if (!formData.personId) {
+      alert('Please select a customer');
       return;
     }
 
@@ -189,21 +188,9 @@ export default function AddLoanForm() {
 
     setLoading(true);
     try {
-      // Create person if new
-      let personId = formData.personId;
-      if (!personId && formData.personName && formData.personPhone) {
-        const personRes = await personAPI.create({
-          name: formData.personName,
-          phone: formData.personPhone,
-          address: formData.personAddress,
-          bookId: selectedBook.id,
-        });
-        personId = personRes.data.person.id;
-      }
-
       // Create loan
       await loanAPI.create({
-        personId,
+        personId: formData.personId,
         bookId: selectedBook.id,
         accountType: 'LENT',
         loanType: formData.loanType,
@@ -218,7 +205,7 @@ export default function AddLoanForm() {
         hasCompounding: false,
         dateToDateCalc: false,
         strategy: 'SIMPLE_INTEREST',
-        remarks: formData.remarks,
+        remarks: formData.remarks ? `${formData.remarks}\nLoan Category: ${formData.loanCategory}` : `Loan Category: ${formData.loanCategory}`,
         processFee: formData.processFee ? parseFloat(formData.processFee) : 0,
       });
 
@@ -247,12 +234,10 @@ export default function AddLoanForm() {
                 setFormData({
                   ...formData,
                   personId: e.target.value,
-                  personName: person?.name || '',
-                  personPhone: person?.phone || '',
-                  personAddress: person?.address || '',
                 });
               }}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              required
             >
               <option value="">Select Existing Customer</option>
               {people.map((person) => (
@@ -272,45 +257,6 @@ export default function AddLoanForm() {
             </button>
           </div>
         </div>
-        {!formData.personId && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Customer Name *
-              </label>
-              <input
-                type="text"
-                value={formData.personName}
-                onChange={(e) => setFormData({ ...formData, personName: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                required={!formData.personId}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number *
-              </label>
-              <input
-                type="tel"
-                value={formData.personPhone}
-                onChange={(e) => setFormData({ ...formData, personPhone: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                required={!formData.personId}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Address
-              </label>
-              <input
-                type="text"
-                value={formData.personAddress}
-                onChange={(e) => setFormData({ ...formData, personAddress: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Loan Type */}
@@ -321,13 +267,16 @@ export default function AddLoanForm() {
             Loan Type *
           </label>
           <select
-            value={formData.loanType}
-            onChange={(e) => setFormData({ ...formData, loanType: e.target.value })}
+            value={formData.loanCategory}
+            onChange={(e) => setFormData({ ...formData, loanCategory: e.target.value })}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             required
           >
-            <option value="WITH_INTEREST">With Interest</option>
-            <option value="FIXED_AMOUNT">Fixed Amount</option>
+            {Object.entries(LOAN_CATEGORIES).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
           </select>
         </div>
         <div>
