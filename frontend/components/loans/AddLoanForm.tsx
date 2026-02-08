@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { loanAPI, personAPI } from '@/services/api';
@@ -9,13 +9,14 @@ import { LOAN_CATEGORIES } from '@/utils/loanCategories';
 
 export default function AddLoanForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const selectedBook = useSelector((state: RootState) => state.book.selectedBook);
   const [loading, setLoading] = useState(false);
   const [people, setPeople] = useState<any[]>([]);
   
   const [formData, setFormData] = useState({
     // Customer details
-    personId: '',
+    personId: searchParams.get('personId') || '',
     // Loan Type
     loanType: 'WITH_INTEREST', // WITH_INTEREST or FIXED_AMOUNT
     loanCategory: 'PERSONAL_LOAN', // PERSONAL_LOAN, MOBILE_LOAN, TV_LOAN
@@ -49,6 +50,23 @@ export default function AddLoanForm() {
     fetchPeople();
   }, [fetchPeople]);
 
+  // Set personId from URL parameter after people are loaded
+  useEffect(() => {
+    const personIdFromUrl = searchParams.get('personId');
+    if (personIdFromUrl && people.length > 0) {
+      // Verify the person exists in the list and set it
+      const personExists = people.some(p => p.id === personIdFromUrl);
+      if (personExists) {
+        setFormData(prev => {
+          // Only update if different to avoid unnecessary re-renders
+          if (prev.personId !== personIdFromUrl) {
+            return { ...prev, personId: personIdFromUrl };
+          }
+          return prev;
+        });
+      }
+    }
+  }, [people, searchParams]);
 
   // Calculate Process Fee: 7.5% of principal amount
   useEffect(() => {

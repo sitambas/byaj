@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { personAPI } from '@/services/api';
+import { personAPI, reportAPI } from '@/services/api';
+import { generateCustomerLoanReportPDF } from '@/utils/pdfGenerator';
 import Link from 'next/link';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -13,12 +16,14 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 export default function CustomerDetailsClient() {
   const params = useParams();
   const router = useRouter();
+  const selectedBook = useSelector((state: RootState) => state.book.selectedBook);
   const customerId = params.id as string;
   const [customer, setCustomer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (customerId) {
@@ -59,6 +64,60 @@ export default function CustomerDetailsClient() {
       setShowDeleteConfirm(false);
     } finally {
       setDeactivating(false);
+    }
+  };
+
+  const handleDownloadReport = async () => {
+    if (!customerId || !selectedBook) {
+      alert('Please select a book first');
+      return;
+    }
+
+    setDownloading(true);
+    try {
+      const response = await reportAPI.partyStatement(customerId, selectedBook.id);
+      const data = response.data;
+
+      // Prepare customer data
+      const customerData = {
+        name: customer?.name || 'N/A',
+        phone: customer?.phone || 'N/A',
+        address: customer?.address || undefined,
+        accountNo: customer?.accountNo || undefined,
+        book: customer?.book || undefined,
+      };
+
+      // Prepare loans data
+      const loansData = data.loans.map((loan: any) => ({
+        billNumber: loan.billNumber || 'N/A',
+        principalAmount: loan.principalAmount || 0,
+        interestRate: loan.interestRate || 0,
+        interest: loan.interest || 0,
+        processFee: loan.processFee || 0,
+        total: loan.total || 0,
+        recovered: loan.recovered || 0,
+        outstanding: loan.outstanding || 0,
+        startDate: loan.startDate || '',
+        endDate: loan.endDate || null,
+        loanType: loan.loanType || 'N/A',
+        status: loan.status || 'N/A',
+      }));
+
+      // Generate PDF
+      const pdfDoc = generateCustomerLoanReportPDF(
+        customerData,
+        loansData,
+        data.totals
+      );
+
+      // Save PDF
+      const fileName = `${customer?.name || 'Customer'}_Loan_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+      pdfDoc.save(fileName);
+    } catch (err: any) {
+      console.error('Failed to download report:', err);
+      alert(err.response?.data?.error || 'Failed to download report');
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -121,12 +180,22 @@ export default function CustomerDetailsClient() {
               >
                 ← Back
               </button>
-              <h1 className="text-3xl font-bold text-gray-900">Customer Details</h1>
-              {customer.book && (
-                <p className="text-sm text-gray-500 mt-1">
-                  Branch: <span className="font-semibold text-indigo-600">{customer.book.name}</span>
-                </p>
-              )}
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Customer Details</h1>
+                  {customer.book && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Branch: <span className="font-semibold text-indigo-600">{customer.book.name}</span>
+                    </p>
+                  )}
+                </div>
+                <Link
+                  href={`/loans/add?personId=${customerId}`}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium"
+                >
+                  Add Loan
+                </Link>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -345,8 +414,13 @@ export default function CustomerDetailsClient() {
                 <div className="bg-white rounded-lg shadow overflow-hidden">
                   <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-gray-900">Loan Accounts</h3>
-                    <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm">
-                      Download Report
+                    <button 
+                      onClick={handleDownloadReport}
+                      style={{ cursor: downloading ? 'not-allowed' : 'pointer' }}
+                      disabled={downloading || !customer?.loans || customer.loans.length === 0}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {downloading ? 'Downloading...' : 'Download Report'}
                     </button>
                   </div>
                   {customer.loans && customer.loans.length > 0 ? (
